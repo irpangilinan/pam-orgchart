@@ -1,0 +1,4193 @@
+<html lang="es"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PAM Org Chart</title>
+<style>
+  :root {
+    --purple: #7b2d8b;
+    --purple-light: #f3e8f7;
+    --blue: #0041c2;
+    --blue-light: #e6eeff;
+    --green: #1a7a3c;
+    --green-light: #e6f5ec;
+    --red: #c0392b;
+    --red-light: #fdecea;
+    --gray-100: #f8f9fa;
+    --gray-200: #e9ecef;
+    --gray-300: #dee2e6;
+    --gray-600: #6c757d;
+    --gray-800: #343a40;
+    --text: #212529;
+    --shadow: 0 2px 8px rgba(0,0,0,0.12);
+    --shadow-sm: 0 1px 4px rgba(0,0,0,0.08);
+    --radius: 10px;
+    --radius-sm: 6px;
+    --connector-color: #b0b8c9;
+    --font: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: var(--font);
+    background: var(--gray-100);
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  /* ── HEADER ── */
+  .header {
+    background: linear-gradient(135deg, #1a0533 0%, #6b1fa0 60%, #a233cc 100%);
+    color: #fff;
+    padding: 16px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.25);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .header h1 {
+    font-size: 1.35rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+  }
+  .header .subtitle {
+    font-size: 0.78rem;
+    opacity: 0.75;
+    margin-top: 2px;
+  }
+  .header .actions {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+  }
+  .header button {
+    background: rgba(255,255,255,0.18);
+    border: 1px solid rgba(255,255,255,0.35);
+    color: #fff;
+    padding: 7px 14px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    font-size: 0.82rem;
+    font-weight: 600;
+    transition: background 0.15s;
+    white-space: nowrap;
+  }
+  .header button:hover { background: rgba(255,255,255,0.3); }
+
+  /* ── BANNER ── */
+  #banner {
+    display: none;
+    background: #1a7a3c;
+    color: #fff;
+    text-align: center;
+    padding: 8px 16px;
+    font-size: 0.85rem;
+    font-weight: 600;
+  }
+
+  /* ── FILTERS PANEL ── */
+  .filters-panel {
+    background: #fff;
+    border-bottom: 1px solid var(--gray-200);
+    padding: 14px 20px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+    align-items: flex-start;
+  }
+  .filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    min-width: 0;
+  }
+  .filter-group label {
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--gray-600);
+  }
+  .pill-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+  }
+  .member-search-wrap { display:flex; align-items:center; }
+  .member-search {
+    width: 220px;
+    padding: 4px 10px;
+    border: 1.5px solid var(--gray-300);
+    border-radius: 20px;
+    font-size: 0.76rem;
+    color: var(--gray-800);
+    background: var(--gray-100);
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .member-search:focus { border-color: var(--purple); background: #fff; }
+  .member-search::placeholder { color: var(--gray-400); }
+  .filter-pill {
+    background: var(--gray-100);
+    border: 1.5px solid var(--gray-300);
+    color: var(--gray-800);
+    padding: 3px 10px;
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 0.76rem;
+    font-weight: 500;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+  .filter-pill:hover { border-color: var(--purple); color: var(--purple); }
+  .filter-pill.active {
+    background: var(--purple);
+    border-color: var(--purple);
+    color: #fff;
+    font-weight: 600;
+  }
+  .btn-clear {
+    background: none;
+    border: 1.5px solid var(--red);
+    color: var(--red);
+    padding: 3px 12px;
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 0.76rem;
+    font-weight: 600;
+    transition: all 0.15s;
+    align-self: flex-end;
+    margin-top: auto;
+    white-space: nowrap;
+  }
+  .btn-clear:hover { background: var(--red); color: #fff; }
+
+  /* ── STATS BAR ── */
+  .stats-bar {
+    background: #fff;
+    border-bottom: 1px solid var(--gray-200);
+    padding: 8px 22px;
+    font-size: 0.83rem;
+    color: var(--gray-600);
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .stats-bar .dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--purple);
+    display: inline-block;
+  }
+
+  /* ── DROP ZONE ── */
+  .drop-zone {
+    margin: 12px 20px;
+    border: 2px dashed var(--gray-300);
+    border-radius: var(--radius);
+    padding: 14px 20px;
+    text-align: center;
+    font-size: 0.82rem;
+    color: var(--gray-600);
+    cursor: default;
+    transition: all 0.2s;
+    background: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+  .drop-zone.drag-over {
+    border-color: var(--purple);
+    background: var(--purple-light);
+    color: var(--purple);
+  }
+  .loaded-files {
+    display: flex; flex-wrap: wrap; gap: 6px;
+  }
+  .loaded-files:empty { display: none; }
+  .loaded-file-chip {
+    display: inline-flex; align-items: center; gap: 5px;
+    background: #eff6ff; border: 1px solid #bfdbfe;
+    color: #1d4ed8; border-radius: 20px;
+    font-size: 0.75rem; padding: 3px 10px;
+  }
+  .loaded-file-chip .chip-remove {
+    cursor: pointer; font-size: 0.85rem; color: #93c5fd;
+    line-height: 1; background: none; border: none; padding: 0;
+  }
+  .loaded-file-chip .chip-remove:hover { color: #1d4ed8; }
+
+  /* ── CHART AREA ── */
+  .chart-area {
+    overflow: auto;
+    padding: 32px 40px 48px;
+    min-height: 300px;
+  }
+  #tree {
+    display: block;
+    width: max-content;
+    margin: 0 auto;
+  }
+
+  /* ── TREE NODES ── */
+  .tree-node {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .node-card {
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    width: 220px;
+    flex-shrink: 0;
+    overflow: hidden;
+    transition: opacity 0.2s, box-shadow 0.15s;
+  }
+  .node-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.18); }
+  .node-card.dimmed { opacity: 0.35; }
+
+  .node-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 9px 12px 8px;
+    cursor: pointer;
+    user-select: none;
+    gap: 6px;
+  }
+  .node-name {
+    font-size: 0.82rem;
+    font-weight: 700;
+    line-height: 1.2;
+    flex: 1;
+  }
+  .count-badge {
+    background: rgba(255,255,255,0.3);
+    border: 1px solid rgba(255,255,255,0.5);
+    color: #fff;
+    font-size: 0.72rem;
+    font-weight: 700;
+    padding: 1px 7px;
+    border-radius: 12px;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .expand-icon {
+    font-size: 0.65rem;
+    opacity: 0.8;
+    flex-shrink: 0;
+    transition: transform 0.2s;
+  }
+
+  /* ROOT */
+  .node-root .node-header {
+    background: linear-gradient(135deg, var(--purple) 0%, #9b3fbf 100%);
+    color: #fff;
+  }
+  /* L1 colors */
+  .node-l1-es .node-header {
+    background: linear-gradient(135deg, var(--blue) 0%, #1a6fe8 100%);
+    color: #fff;
+  }
+  .node-l1-pssm .node-header {
+    background: linear-gradient(135deg, var(--green) 0%, #229b4e 100%);
+    color: #fff;
+  }
+  .node-l1-warc .node-header {
+    background: linear-gradient(135deg, var(--red) 0%, #e05248 100%);
+    color: #fff;
+  }
+  /* L2 */
+  .node-l2-es {
+    border: 2px solid var(--blue);
+    background: #fff;
+  }
+  .node-l2-es .node-header {
+    background: var(--blue-light);
+    color: var(--blue);
+  }
+  .node-l2-es .count-badge {
+    background: var(--blue);
+    color: #fff;
+    border-color: var(--blue);
+  }
+  .node-l2-pssm {
+    border: 2px solid var(--green);
+    background: #fff;
+  }
+  .node-l2-pssm .node-header {
+    background: var(--green-light);
+    color: var(--green);
+  }
+  .node-l2-pssm .count-badge {
+    background: var(--green);
+    color: #fff;
+    border-color: var(--green);
+  }
+  .node-l2-warc {
+    border: 2px solid var(--red);
+    background: #fff;
+  }
+  .node-l2-warc .node-header {
+    background: var(--red-light);
+    color: var(--red);
+  }
+  .node-l2-warc .count-badge {
+    background: var(--red);
+    color: #fff;
+    border-color: var(--red);
+  }
+  /* L3 */
+  .node-l3-es {
+    border: 1.5px solid #9bbff7;
+    background: #f0f5ff;
+  }
+  .node-l3-es .node-header {
+    background: #dce8fd;
+    color: var(--blue);
+  }
+  .node-l3-es .count-badge {
+    background: var(--blue);
+    color: #fff;
+    border-color: var(--blue);
+  }
+  .node-l3-pssm {
+    border: 1.5px solid #8fd4aa;
+    background: #f0faf4;
+  }
+  .node-l3-pssm .node-header {
+    background: #d9f2e3;
+    color: var(--green);
+  }
+  .node-l3-pssm .count-badge {
+    background: var(--green);
+    color: #fff;
+    border-color: var(--green);
+  }
+  .node-l3-warc {
+    border: 1.5px solid #f4a9a4;
+    background: #fff5f5;
+  }
+  .node-l3-warc .node-header {
+    background: #fce4e3;
+    color: var(--red);
+  }
+  .node-l3-warc .count-badge {
+    background: var(--red);
+    color: #fff;
+    border-color: var(--red);
+  }
+
+  /* ── PEOPLE SECTION ── */
+  .people-section {
+    border-top: 1px solid rgba(0,0,0,0.07);
+    background: rgba(255,255,255,0.6);
+  }
+  .people-toggle {
+    width: 100%;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 6px 12px;
+    font-size: 0.76rem;
+    color: var(--gray-600);
+    font-weight: 600;
+    text-align: left;
+    transition: background 0.12s;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .people-toggle:hover { background: rgba(0,0,0,0.04); }
+  .people-list {
+    max-height: 260px;
+    overflow-y: auto;
+    padding: 0 0 4px;
+  }
+  .person-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 5px 10px;
+    border-top: 1px solid rgba(0,0,0,0.05);
+    transition: background 0.1s;
+  }
+  .person-row:hover { background: rgba(0,0,0,0.025); }
+  .avatar {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--purple), var(--blue));
+    color: #fff;
+    font-size: 0.65rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    letter-spacing: 0.02em;
+  }
+  .person-info {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+  }
+  .person-name {
+    font-size: 0.74rem;
+    font-weight: 600;
+    color: var(--text);
+    white-space: normal;
+    word-break: break-word;
+    line-height: 1.3;
+  }
+  .role-chip {
+    font-size: 0.65rem;
+    color: var(--gray-600);
+    white-space: normal;
+    word-break: break-word;
+    line-height: 1.2;
+  }
+  .person-meta {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 2px;
+    flex-shrink: 0;
+  }
+  .cl-tag {
+    font-size: 0.6rem;
+    background: var(--gray-200);
+    color: var(--gray-800);
+    padding: 1px 5px;
+    border-radius: 4px;
+    white-space: nowrap;
+    font-weight: 600;
+  }
+  .multi-hat {
+    font-size: 0.55rem;
+    background: #fff3cd;
+    color: #856404;
+    padding: 1px 4px;
+    border-radius: 4px;
+    font-weight: 700;
+    margin-left: 4px;
+    vertical-align: middle;
+    cursor: default;
+  }
+  .fte-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 3px;
+    margin-top: 3px;
+  }
+  .fte-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    font-size: 0.58rem;
+    font-weight: 600;
+    padding: 1px 5px;
+    border-radius: 4px;
+    background: #eef2ff;
+    color: #3730a3;
+    border: 1px solid #c7d2fe;
+    cursor: default;
+    white-space: nowrap;
+  }
+  .fte-badge .fte-pct {
+    font-weight: 700;
+    color: #1e1b8b;
+  }
+  .fte-proj-name { display: none; font-weight: 400; color: #5b21b6; margin-left: 2px; }
+  #tree.show-fte-name .fte-proj-name { display: inline; }
+  #tree.hide-role .role-chip { display: none !important; }
+  #tree.hide-location .flag-icon { display: none !important; }
+  #tree.hide-cl .cl-tag { display: none !important; }
+  #tree.hide-fte .fte-tags { display: none !important; }
+  .vis-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+  .vis-toggle {
+    font-size: 0.72rem; padding: 3px 10px;
+    border-radius: 20px; border: 1.5px solid var(--gray-300);
+    background: var(--gray-100); color: var(--text-muted);
+    cursor: pointer; transition: all 0.15s;
+  }
+  .vis-toggle.active { background: #dcfce7; color: #15803d; border-color: #86efac; font-weight: 600; }
+  .role-short { display: none; }
+  #tree.show-abbrev .role-full  { display: none; }
+  #tree.show-abbrev .role-short { display: inline; }
+
+  /* ── LEVEL TOOLBAR ── */
+  .level-toolbar {
+    display: flex; align-items: center; flex-wrap: wrap;
+    gap: 6px; padding: 6px 12px;
+    background: var(--gray-100); border-bottom: 1px solid var(--gray-300);
+  }
+  .ltb-label {
+    font-size: 0.72rem; font-weight: 600; color: var(--text-muted);
+    text-transform: uppercase; letter-spacing: 0.04em; white-space: nowrap;
+  }
+  .ltb-sep { width: 1px; height: 22px; background: var(--gray-300); margin: 0 2px; }
+  .ltb-group { display: flex; gap: 4px; align-items: center; }
+  .ltb-btn {
+    font-size: 0.72rem; padding: 3px 9px; border-radius: 14px;
+    border: 1.5px solid var(--gray-300); background: white; color: var(--text-muted);
+    cursor: pointer; transition: all 0.15s; white-space: nowrap;
+  }
+  .ltb-btn:hover { background: var(--accent); color: white; border-color: var(--accent); }
+
+  /* ── TREE CONNECTORS ── */
+  .children-connector {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+  }
+  .vline {
+    width: 2px;
+    height: 18px;
+    background: var(--connector-color);
+  }
+  .children-row {
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+    gap: 0;
+    position: relative;
+  }
+  .children-row::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 50%;
+    right: 50%;
+    height: 2px;
+    background: var(--connector-color);
+  }
+  .child-col {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 0 14px;
+    position: relative;
+    flex-shrink: 0;
+  }
+  .child-col::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: var(--connector-color);
+  }
+  .vline-top {
+    width: 2px;
+    height: 18px;
+    background: var(--connector-color);
+  }
+
+  /* ── PRINT ── */
+  @page { size: A4 landscape; margin: 1.2cm 1.4cm; }
+  #printOrgChart { display: none; }
+
+  @media print {
+    .no-print  { display: none !important; }
+    .chart-area{ display: none !important; }
+    body { background:#fff; -webkit-print-color-adjust:exact; color-adjust:exact; font-family:Arial,sans-serif; }
+    #printOrgChart { display:block !important; }
+
+    /* page breaks */
+    .po-page { page-break-after: always; }
+    .po-page:last-child { page-break-after: auto; }
+
+    /* top header on every page */
+    .po-pg-header {
+      display:flex; align-items:center; justify-content:space-between;
+      border-bottom:3px solid #7b2d8b; padding-bottom:8px; margin-bottom:14px;
+    }
+    .po-pg-header h2 { color:#7b2d8b; font-size:17px; font-weight:800; margin:0; }
+    .po-pg-header p  { font-size:10px; color:#999; margin:0; text-align:right; }
+
+    /* filter summary chip */
+    .po-filter-chip {
+      display:inline-block; border:1px dashed #ccc; border-radius:4px;
+      padding:2px 8px; font-size:9px; color:#888; margin-bottom:10px;
+    }
+
+    /* ── PAGE 1 overview ── */
+    .po-root-wrap { display:flex; justify-content:center; margin:14px 0 6px; }
+    .po-root-box  {
+      background:linear-gradient(135deg,#7b2d8b,#9b3fbf); color:#fff;
+      padding:10px 36px; border-radius:8px; font-size:15px; font-weight:800;
+      display:flex; gap:12px; align-items:center;
+    }
+    .po-root-badge {
+      background:rgba(255,255,255,.28); border-radius:10px;
+      padding:2px 10px; font-size:12px; font-weight:700;
+    }
+    .po-vconn { width:2px; height:22px; background:#c5c5d0; margin:0 auto; }
+    .po-l1-row { display:flex; justify-content:center; gap:18px; margin-top:2px; }
+    .po-l1-card {
+      flex:1; max-width:230px; border-radius:8px; padding:14px 18px;
+      color:#fff; text-align:center;
+    }
+    .po-l1-card.es   { background:linear-gradient(135deg,#0041c2,#1a6fe8); }
+    .po-l1-card.pssm { background:linear-gradient(135deg,#1a7a3c,#229b4e); }
+    .po-l1-card.warc { background:linear-gradient(135deg,#c0392b,#e05248); }
+    .po-l1-name  { font-size:13px; font-weight:700; }
+    .po-l1-count { font-size:30px; font-weight:800; margin:5px 0 3px; line-height:1; }
+    .po-l1-sub   { font-size:9px;  opacity:.85; }
+
+    .po-legend { display:flex; flex-wrap:wrap; gap:10px; margin-top:22px; border-top:1px solid #eee; padding-top:10px; }
+    .po-legend-item { display:flex; align-items:center; gap:5px; font-size:10px; color:#555; }
+    .po-legend-dot  { width:10px; height:10px; border-radius:2px; }
+
+    /* ── BRANCH PAGES ── */
+    .po-branch-bar {
+      border-radius:6px; padding:7px 14px; color:#fff; margin-bottom:12px;
+      display:flex; align-items:center; justify-content:space-between;
+    }
+    .po-branch-bar h3  { font-size:13px; font-weight:800; margin:0; }
+    .po-branch-bar span{ font-size:10px; opacity:.9; }
+    .po-branch-bar.es   { background:linear-gradient(135deg,#0041c2,#1a6fe8); }
+    .po-branch-bar.pssm { background:linear-gradient(135deg,#1a7a3c,#229b4e); }
+    .po-branch-bar.warc { background:linear-gradient(135deg,#c0392b,#e05248); }
+
+    /* L2 card grid */
+    .po-l2-grid { display:flex; flex-wrap:wrap; gap:8px; align-items:flex-start; }
+
+    .po-l2-card {
+      flex:0 0 auto; min-width:140px; max-width:210px;
+      border:2px solid; border-radius:6px; font-size:9.5px; break-inside:avoid;
+    }
+    .po-l2-card.es   { border-color:#0041c2; }
+    .po-l2-card.pssm { border-color:#1a7a3c; }
+    .po-l2-card.warc { border-color:#c0392b; }
+
+    .po-l2-head {
+      padding:5px 8px; display:flex; justify-content:space-between; align-items:center;
+      font-weight:700; font-size:9.5px;
+    }
+    .po-l2-card.es   .po-l2-head { background:#dce8fd; color:#0041c2; }
+    .po-l2-card.pssm .po-l2-head { background:#d9f2e3; color:#1a7a3c; }
+    .po-l2-card.warc .po-l2-head { background:#fce4e3; color:#c0392b; }
+
+    .po-cnt { font-size:8.5px; font-weight:700; padding:1px 5px; border-radius:8px; color:#fff; flex-shrink:0; }
+    .po-l2-card.es   .po-cnt { background:#0041c2; }
+    .po-l2-card.pssm .po-cnt { background:#1a7a3c; }
+    .po-l2-card.warc .po-cnt { background:#c0392b; }
+
+    /* people rows */
+    .po-people { padding:2px 7px 3px; }
+    .po-person {
+      font-size:8.5px; padding:1.5px 0; line-height:1.25;
+      border-top:1px solid #f0f0f0; display:flex; gap:3px;
+    }
+    .po-person:first-child { border-top:none; }
+    .po-pname { font-weight:600; color:#222; }
+    .po-prole { color:#777; }
+
+    /* L3 sub-section */
+    .po-l3-block { border-top:1px solid #e4e4e4; }
+    .po-l3-head  {
+      padding:3px 7px 2px; display:flex; justify-content:space-between; align-items:center;
+      font-size:8.5px; font-weight:700;
+    }
+    .po-l2-card.es   .po-l3-head { background:#f0f5ff; color:#0041c2; }
+    .po-l2-card.pssm .po-l3-head { background:#f0faf4; color:#1a7a3c; }
+    .po-l2-card.warc .po-l3-head { background:#fff5f5; color:#c0392b; }
+    .po-l3-people { padding:2px 7px 3px; }
+
+    /* L4 (DevCells) */
+    .po-l4-block { border-top:1px dashed #e8e8e8; margin-left:6px; }
+    .po-l4-head  {
+      padding:2px 7px 1px; display:flex; justify-content:space-between; align-items:center;
+      font-size:8px; font-weight:700; opacity:.85;
+    }
+    .po-l2-card.es   .po-l4-head { background:#f5f8ff; color:#0041c2; }
+    .po-l2-card.pssm .po-l4-head { background:#f5fdf8; color:#1a7a3c; }
+    .po-l2-card.warc .po-l4-head { background:#fffafa; color:#c0392b; }
+    .po-l4-people { padding:1px 7px 2px; }
+  }
+
+  /* ── SCROLLBARS ── */
+  .chart-area::-webkit-scrollbar, .people-list::-webkit-scrollbar { width: 6px; height: 6px; }
+  .chart-area::-webkit-scrollbar-track, .people-list::-webkit-scrollbar-track { background: var(--gray-100); }
+  .chart-area::-webkit-scrollbar-thumb, .people-list::-webkit-scrollbar-thumb { background: var(--gray-300); border-radius: 3px; }
+
+  /* ── ACTIVE FILTER CHIPS ── */
+  .active-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    padding: 0 20px 10px;
+    background: #fff;
+    border-bottom: 1px solid var(--gray-200);
+  }
+  .active-filters:empty { display: none; }
+  .filter-chip {
+    background: var(--purple-light);
+    border: 1px solid var(--purple);
+    color: var(--purple);
+    font-size: 0.74rem;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .filter-chip .chip-x {
+    cursor: pointer;
+    font-size: 0.7rem;
+    opacity: 0.7;
+  }
+  .filter-chip .chip-x:hover { opacity: 1; }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header no-print">
+  <div>
+    <h1>PAM Org Chart</h1>
+    <div class="subtitle">Identity &amp; Access Management — People Directory</div>
+  </div>
+  <div class="actions">
+    <button id="btnPpt">📊 PPT</button>
+    <button id="btnDownload">💾 Download HTML</button>
+  </div>
+</div>
+
+<!-- BANNER -->
+<div id="banner" style="display: none;">✓ File processed: 143 active members loaded</div>
+
+<!-- FILTERS PANEL -->
+<div class="filters-panel no-print" id="filtersPanel"><div class="filter-group"><label>Chart View</label><div class="vis-row"><button class="vis-toggle">⊕ Expand All</button><button class="vis-toggle">⊖ Collapse All</button><button class="vis-toggle">👥 ⊕ Members</button><button class="vis-toggle">👥 ⊖ Members</button></div></div><div class="filter-group"><label>Career Level</label><div class="pill-row" data-key="cl"><button class="filter-pill" data-val="6 - Senior Manager">6 - Senior Manager</button><button class="filter-pill" data-val="7 - Manager">7 - Manager</button><button class="filter-pill" data-val="8 - Consultant">8 - Consultant</button><button class="filter-pill" data-val="9 - Consultant">9 - Consultant</button><button class="filter-pill" data-val="10 - Analyst">10 - Analyst</button><button class="filter-pill" data-val="11 - Analyst">11 - Analyst</button><button class="filter-pill" data-val="12 - Associate">12 - Associate</button><button class="filter-pill" data-val="N/A">N/A</button></div></div><div class="filter-group"><label>Country</label><div class="pill-row" data-key="country"><button class="filter-pill" data-val="Argentina">Argentina</button><button class="filter-pill" data-val="Czech Republic">Czech Republic</button><button class="filter-pill" data-val="Germany">Germany</button><button class="filter-pill" data-val="India">India</button><button class="filter-pill" data-val="Philippines">Philippines</button><button class="filter-pill" data-val="United States of America">United States of America</button><button class="filter-pill" data-val="N/A">N/A</button></div></div><div class="filter-group"><label>Team (L1)</label><div class="pill-row" data-key="team"><button class="filter-pill" data-val="Enablement Services">Enablement Services</button><button class="filter-pill" data-val="PSSM">PSSM</button><button class="filter-pill" data-val="WARC">WARC</button></div></div><div class="filter-group"><label>Role</label><div class="pill-row" data-key="role"><button class="filter-pill" data-val="Business Analyst">Business Analyst</button><button class="filter-pill" data-val="Collaterals&nbsp;Mgmt">Collaterals&nbsp;Mgmt</button><button class="filter-pill" data-val="Data Analyst">Data Analyst</button><button class="filter-pill" data-val="Developer">Developer</button><button class="filter-pill" data-val="Developer/Ops Support">Developer/Ops Support</button><button class="filter-pill" data-val="Engineering">Engineering</button><button class="filter-pill" data-val="Lead Developer">Lead Developer</button><button class="filter-pill" data-val="Lead Engineer">Lead Engineer</button><button class="filter-pill" data-val="Ops Lead">Ops Lead</button><button class="filter-pill" data-val="Ops Support">Ops Support</button><button class="filter-pill" data-val="Ops Support / PIM Lead Admin">Ops Support / PIM Lead Admin</button><button class="filter-pill" data-val="PMO &amp; Finance">PMO &amp; Finance</button><button class="filter-pill" data-val="Product Area Manager">Product Area Manager</button><button class="filter-pill" data-val="Product Manager">Product Manager</button><button class="filter-pill" data-val="Product Owner">Product Owner</button><button class="filter-pill" data-val="Program Manager">Program Manager</button><button class="filter-pill" data-val="RTE">RTE</button><button class="filter-pill" data-val="RTE2">RTE2</button><button class="filter-pill" data-val="Scrum Master">Scrum Master</button><button class="filter-pill" data-val="Scrum master">Scrum master</button><button class="filter-pill" data-val="Service Manager">Service Manager</button><button class="filter-pill" data-val="Solution Architect">Solution Architect</button><button class="filter-pill" data-val="Team Lead">Team Lead</button><button class="filter-pill" data-val="Tech Arch">Tech Arch</button><button class="filter-pill" data-val="Technical Security Manager">Technical Security Manager</button><button class="filter-pill" data-val="User Experience">User Experience</button></div></div><div class="filter-group"><label>Project ID</label><div class="pill-row" data-key="project"></div></div><div class="filter-group"><label>Show on cards</label><div class="vis-row"><button class="vis-toggle active" data-vis-key="role">Role</button><button class="vis-toggle active" data-vis-key="abbrev">Acronyms</button><button class="vis-toggle active" data-vis-key="location">Country</button><button class="vis-toggle active" data-vis-key="cl">Career Level</button><button class="vis-toggle" data-vis-key="fte">Project / FTE</button><button class="vis-toggle" data-vis-key="fteName">Project Name</button></div></div><div class="filter-group"><label>Member</label><div class="member-search-wrap"><input type="text" id="memberSearch" class="member-search" placeholder="Search by name or EID…"></div></div><button class="btn-clear">✕ Clear</button></div>
+
+<!-- ACTIVE FILTER CHIPS -->
+<div class="active-filters no-print" id="activeFilters"></div>
+
+<!-- STATS BAR -->
+<div class="stats-bar no-print" id="statsBar"><span class="dot"></span><span>Showing <strong>124</strong> of <strong>124</strong> people</span></div>
+
+<!-- DROP ZONE -->
+<div class="drop-zone no-print" id="dropZone" style="cursor: pointer; flex-direction: column; gap: 6px;">
+  <div id="dropZoneHint">📁 Drop <strong>PAM Roster.xlsx</strong> to update members &nbsp;|&nbsp; Drop <strong>Data Extract CSV</strong> to update FTE Forecast</div>
+  <div class="loaded-files" id="loadedFiles"><div class="loaded-file-chip">📊 PAM Roster_FY27.xlsx <button class="chip-remove" title="Remove roster">✕</button></div></div>
+</div>
+
+<!-- LEVEL TOOLBAR -->
+<div class="level-toolbar no-print" id="levelToolbar">
+  <span class="ltb-label">Expand</span>
+  <div class="ltb-group">
+    <button class="ltb-btn" onclick="toggleAllNodes(true)">⊕ All</button>
+    <button class="ltb-btn" onclick="toggleAllNodes(false)">⊖ All</button>
+  </div>
+  <div class="ltb-sep"></div>
+  <div class="ltb-group">
+    <button class="ltb-btn" onclick="setLevelExpand(1,true)">L1 ⊕</button>
+    <button class="ltb-btn" onclick="setLevelExpand(1,false)">L1 ⊖</button>
+  </div>
+  <div class="ltb-group">
+    <button class="ltb-btn" onclick="setLevelExpand(2,true)">L2 ⊕</button>
+    <button class="ltb-btn" onclick="setLevelExpand(2,false)">L2 ⊖</button>
+  </div>
+  <div class="ltb-group">
+    <button class="ltb-btn" onclick="setLevelExpand(3,true)">L3 ⊕</button>
+    <button class="ltb-btn" onclick="setLevelExpand(3,false)">L3 ⊖</button>
+  </div>
+  <div class="ltb-group">
+    <button class="ltb-btn" onclick="setLevelExpand(4,true)">L4 ⊕</button>
+    <button class="ltb-btn" onclick="setLevelExpand(4,false)">L4 ⊖</button>
+  </div>
+  <div class="ltb-sep"></div>
+  <div class="ltb-group">
+    <button class="ltb-btn" onclick="toggleAllMembers(true)">👥 ⊕</button>
+    <button class="ltb-btn" onclick="toggleAllMembers(false)">👥 ⊖</button>
+  </div>
+  <div class="ltb-sep"></div>
+  <div class="ltb-group">
+    <button class="ltb-btn" style="color:#15803d;border-color:#86efac;" onclick="refreshChart()">↻ Refresh</button>
+    <button class="ltb-btn" style="color:#b91c1c;border-color:#fca5a5;" onclick="clearDroppedFiles()" id="btnClearFiles" title="Remove all dropped files and revert to embedded data">🗑 Clear Files</button>
+  </div>
+</div>
+
+<!-- CHART AREA -->
+<div class="chart-area" id="chartArea">
+  <div id="tree" class="show-abbrev hide-fte">
+  <div class="tree-node" id="node-pam" data-level="0">
+    <div class="node-card node-root" style="min-height: 67px;">
+      <div class="node-header" onclick="toggleChildren('pam')">
+        <span class="node-name">PAM</span>
+        <span class="count-badge">100</span>
+        <span class="expand-icon">▼</span>
+      </div>
+      
+    <div class="people-section">
+      <button class="people-toggle" onclick="togglePeople(event,'pam')" style="">👥 1 member ▲</button>
+      <div class="people-list" id="people-pam" style=""><div class="person-row">
+    <div class="avatar">CX</div>
+    <div class="person-info">
+      <span class="person-name">C. X. Herrera</span>
+      <span class="role-chip"><span class="role-full">Product Manager</span><span class="role-short">PM</span></span>
+      
+    </div>
+    <div class="person-meta">
+      <span class="flag-icon">🇺🇸</span>
+      <span class="cl-tag">6 - Senior Manager</span>
+    </div>
+  </div></div>
+    </div>
+    </div>
+    
+    <div class="children-connector" id="conn-pam">
+      <div class="vline"></div>
+      <div class="children-row" id="children-pam">
+        <div class="child-col" style="">
+  <div class="tree-node" id="node-es" data-level="1">
+    <div class="node-card node-l1-es" style="min-height: 67px;">
+      <div class="node-header" onclick="toggleChildren('es')">
+        <span class="node-name">Enablement Services</span>
+        <span class="count-badge">7</span>
+        <span class="expand-icon" style="">▼</span>
+      </div>
+      
+    </div>
+    
+    <div class="children-connector" id="conn-es" style="">
+      <div class="vline"></div>
+      <div class="children-row" id="children-es">
+        <div class="child-col" style="">
+  <div class="tree-node" id="node-es-oe" data-level="2">
+    <div class="node-card node-l2-es" style="min-height: 81px;">
+      <div class="node-header" onclick="toggleChildren('es-oe')">
+        <span class="node-name">Operations Enablement</span>
+        <span class="count-badge">7</span>
+        <span class="expand-icon" style="transform: rotate(-90deg);">▼</span>
+      </div>
+      
+    <div class="people-section">
+      <button class="people-toggle" onclick="togglePeople(event,'es-oe')">👥 1 member ▲</button>
+      <div class="people-list" id="people-es-oe" style=""><div class="person-row">
+    <div class="avatar">SS</div>
+    <div class="person-info">
+      <span class="person-name">Svitlana Safrankova</span>
+      <span class="role-chip"><span class="role-full">Service Manager</span><span class="role-short">PMO-OL</span></span>
+      
+    </div>
+    <div class="person-meta">
+      <span class="flag-icon">🇨🇿</span>
+      <span class="cl-tag">8 - Consultant</span>
+    </div>
+  </div></div>
+    </div>
+    </div>
+    
+    <div class="children-connector" id="conn-es-oe" style="display: none;">
+      <div class="vline"></div>
+      <div class="children-row" id="children-es-oe">
+        <div class="child-col" style="">
+  <div class="tree-node" id="node-es-oe-agile" data-level="3">
+    <div class="node-card node-l3-es" style="min-height: 81px;">
+      <div class="node-header">
+        <span class="node-name">AGILE Coordination</span>
+        <span class="count-badge">2</span>
+        
+      </div>
+      
+    <div class="people-section">
+      <button class="people-toggle" onclick="togglePeople(event,'es-oe-agile')">👥 2 members ▲</button>
+      <div class="people-list" id="people-es-oe-agile" style=""><div class="person-row">
+    <div class="avatar">AL</div>
+    <div class="person-info">
+      <span class="person-name">Ana L. Garcia</span><span class="multi-hat" title="2 assignments">⊕2</span>
+      <span class="role-chip"><span class="role-full">RTE2</span><span class="role-short">SM</span></span>
+      
+    </div>
+    <div class="person-meta">
+      <span class="flag-icon">🇦🇷</span>
+      <span class="cl-tag">9 - Consultant</span>
+    </div>
+  </div><div class="person-row">
+    <div class="avatar">ES</div>
+    <div class="person-info">
+      <span class="person-name">Eurika S. L. Fajutag</span>
+      <span class="role-chip"><span class="role-full">RTE</span><span class="role-short">RTE</span></span>
+      
+    </div>
+    <div class="person-meta">
+      <span class="flag-icon">🇵🇭</span>
+      <span class="cl-tag">8 - Consultant</span>
+    </div>
+  </div></div>
+    </div>
+    </div>
+    
+  </div></div><div class="child-col" style="">
+  <div class="tree-node" id="node-es-oe-coll" data-level="3">
+    <div class="node-card node-l3-es" style="min-height: 81px;">
+      <div class="node-header">
+        <span class="node-name">Collaterals Mgmt</span>
+        <span class="count-badge">1</span>
+        
+      </div>
+      
+    <div class="people-section">
+      <button class="people-toggle" onclick="togglePeople(event,'es-oe-coll')">👥 1 member ▲</button>
+      <div class="people-list" id="people-es-oe-coll" style=""><div class="person-row">
+    <div class="avatar">JL</div>
+    <div class="person-info">
+      <span class="person-name">Joanna Liza Abdon</span><span class="multi-hat" title="2 assignments">⊕2</span>
+      <span class="role-chip"><span class="role-full">Collaterals&nbsp;Mgmt</span><span class="role-short">Collaterals&nbsp;Mgmt</span></span>
+      
+    </div>
+    <div class="person-meta">
+      <span class="flag-icon">🇵🇭</span>
+      <span class="cl-tag">10 - Analyst</span>
+    </div>
+  </div></div>
+    </div>
+    </div>
+    
+  </div></div><div class="child-col" style="">
+  <div class="tree-node" id="node-es-oe-pmo" data-level="3">
+    <div class="node-card node-l3-es" style="min-height: 81px;">
+      <div class="node-header">
+        <span class="node-name">PMO &amp; Finance</span>
+        <span class="count-badge">2</span>
+        
+      </div>
+      
+    <div class="people-section">
+      <button class="people-toggle" onclick="togglePeople(event,'es-oe-pmo')">👥 2 members ▲</button>
+      <div class="people-list" id="people-es-oe-pmo" style=""><div class="person-row">
+    <div class="avatar">AG</div>
+    <div class="person-info">
+      <span class="person-name">Agustin Gamero</span>
+      <span class="role-chip"><span class="role-full">PMO &amp; Finance</span><span class="role-short">SP</span></span>
+      
+    </div>
+    <div class="person-meta">
+      <span class="flag-icon">🇦🇷</span>
+      <span class="cl-tag">9 - Consultant</span>
+    </div>
+  </div><div class="person-row">
+    <div class="avatar">AR</div>
+    <div class="person-info">
+      <span class="person-name">Alejandro R. Alamos</span>
+      <span class="role-chip"><span class="role-full">PMO &amp; Finance</span><span class="role-short">SP</span></span>
+      
+    </div>
+    <div class="person-meta">
+      <span class="flag-icon">❓</span>
+      <span class="cl-tag">N/A</span>
+    </div>
+  </div></div>
+    </div>
+    </div>
+    
+  </div></div><div class="child-col" style="">
+  <div class="tree-node" id="node-es-oe-sn" data-level="3">
+    <div class="node-card node-l3-es" style="min-height: 81px;">
+      <div class="node-header">
+        <span class="node-name">ServiceNow Transformation</span>
+        <span class="count-badge">1</span>
+        
+      </div>
+      
+    <div class="people-section">
+      <button class="people-toggle" onclick="togglePeople(event,'es-oe-sn')">👥 1 member ▲</button>
+      <div class="people-list" id="people-es-oe-sn" style=""><div class="person-row">
+    <div class="avatar">MB</div>
+    <div class="person-info">
+      <span class="person-name">Meriam B. Patigayon</span>
+      <span class="role-chip"><span class="role-full">Business Analyst</span><span class="role-short">BA</span></span>
+      
+    </div>
+    <div class="person-meta">
+      <span class="flag-icon">🇵🇭</span>
+      <span class="cl-tag">10 - Analyst</span>
+    </div>
+  </div></div>
+    </div>
+    </div>
+    
+  </div></div><div class="child-col" style="">
+  <div class="tree-node" id="node-es-oe-ux" data-level="3">
+    <div class="node-card node-l3-es" style="min-height: 81px;">
+      <div class="node-header">
+        <span class="node-name">User Experience</span>
+        <span class="count-badge">1</span>
+        
+      </div>
+      
+    <div class="people-section">
+      <button class="people-toggle" onclick="togglePeople(event,'es-oe-ux')">👥 1 member ▲</button>
+      <div class="people-list" id="people-es-oe-ux" style=""><div class="person-row">
+    <div class="avatar">JL</div>
+    <div class="person-info">
+      <span class="person-name">Joanna Liza Abdon</span><span class="multi-hat" title="2 assignments">⊕2</span>
+      <span class="role-chip"><span class="role-full">User Experience</span><span class="role-short">DS</span></span>
+      
+    </div>
+    <div class="person-meta">
+      <span class="flag-icon">🇵🇭</span>
+      <span class="cl-tag">10 - Analyst</span>
+    </div>
+  </div></div>
+    </div>
+    </div>
+    
+  </div></div>
+      </div>
+    </div>
+  </div></div>
+      </div>
+    </div>
+  </div></div><div class="child-col">
+  <div class="tree-node" id="node-pssm" data-level="1">
+    <div class="node-card node-l1-pssm" style="min-height: 67px;">
+      <div class="node-header" onclick="toggleChildren('pssm')">
+        <span class="node-name">PSSM</span>
+        <span class="count-badge">61</span>
+        <span class="expand-icon">▼</span>
+      </div>
+      
+    <div class="people-section">
+      <button class="people-toggle" onclick="togglePeople(event,'pssm')" style="">👥 1 member ▲</button>
+      <div class="people-list" id="people-pssm" style=""><div class="person-row">
+    <div class="avatar">QC</div>
+    <div class="person-info">
+      <span class="person-name">Queenie C. SO.</span>
+      <span class="role-chip"><span class="role-full">Product Area Manager</span><span class="role-short">PAM</span></span>
+      
+    </div>
+    <div class="person-meta">
+      <span class="flag-icon">🇵🇭</span>
+      <span class="cl-tag">6 - Senior Manager</span>
+    </div>
+  </div></div>
+    </div>
+    </div>
+    
+    <div class="children-connector" id="conn-pssm">
+      <div class="vline"></div>
+      <div class="children-row" id="children-pssm">
+        <div class="child-col">
+  <div class="tree-node" id="node-pssm-ktlo" data-level="2">
+    <div class="node-card node-l2-pssm" style="min-height: 81px;">
+      <div class="node-header" onclick="toggleChildren('pssm-ktlo')">
+        <span class="node-name">PSSM KTLO Core</span>
+        <span class="count-badge">33</span>
+        <span class="expand-icon" style="transform: rotate(-90deg);">▼</span>
+      </div>
+      
+    <div class="people-section">
+      <button class="people-toggle" onclick="togglePeople(event,'pssm-ktlo')">👥 5 members ▲</button>
+      <div class="people-list" id="people-pssm-ktlo" style=""><div class="person-row">
+    <div class="avatar">GM</div>
+    <div class="person-info">
+      <span class="person-name">Gabriel Montanez JR.</span><span class="multi-hat" title="2 assignments">⊕2</span>
+      <span class="role-chip"><span class="role-full">Tech Arch</span><span class="role-short">TA</span></span>
+      
+    </div>
+    <div class="person-meta">
+      <span class="flag-icon">🇵🇭</span>
+      <span class="cl-tag">9 - Consultant</span>
+    </div>
+  </div><div class="person-row">
+    <div class="avatar">JM</div>
+    <div class="person-info">
+      <span class="person-name">Jacoby M. Herbolario</span>
+      <span class="role-chip"><span class="role-full">Product Owner</span><span class="role-short">PO</span></span>
+      
+    </div>
+    <div class="person-meta">
+      <span class="flag-icon">🇵🇭</span>
+      <span class="cl-tag">7 - Manager</span>
+    </div>
+  </div><div class="person-row">
+    <div class="avatar">JD</div>
+    <div class="person-info">
+      <span class="person-name">Jeremias D. Santiago</span>
+      <span class="role-chip"><span class="role-full">Tech Arch</span><span class="role-short">TA</span></span>
+      
+    </div>
+    <div class="person-meta">
+      <span class="flag-icon">🇵🇭</span>
+      <span class="cl-tag">8 - Consultant</span>
+    </div>
+  </div><div class="person-row">
+    <div class="avatar">NS</div>
+    <div class="person-info">
+      <span class="person-name">Naveen S. Setty</span><span class="multi-hat" title="3 assignments">⊕3</span>
+      <span class="role-chip"><span class="role-full">Solution Architect</span><span class="role-short">SA</span></span>
+      
+    </div>
+    <div class="person-meta">
+      <span class="flag-icon">🇮🇳</span>
+      <span class="cl-tag">7 - Manager</span>
+    </div>
+  </div><div class="person-row">
+    <div class="avatar">PG</div>
+    <div class="person-info">
+      <span class="person-name">Pablo G. Cruz</span><span class="multi-hat" title="3 assignments">⊕3</span>
+      <span class="role-chip"><span class="role-full">Scrum master</span><span class="role-short">SM</span></span>
+      
+    </div>
+    <div class="person-meta">
+      <span class="flag-icon">🇵🇭</span>
+      <span class="cl-tag">10 - Analyst</span>
+    </div>
+  </div></div>
+    </div>
+    </div>
+    
+    <div class="children-connector" id="conn-pssm-ktlo" style="display: none;">
+      <div class="vline"></div>
+      <div class="children-row" id="children-pssm-ktlo">
+        <div class="child-col">
+  <div class="tree-node" id="node-pssm-ktlo-ai" data-level="3">
+    <div class="node-card node-l2-pssm" style="min-height: 81px;">
+      <div class="node-header" onclick="toggleChildren('pssm-ktlo-ai')">
+        <span class="node-name">Application Integration</span>
+        <span class="count-badge">10</span>
+        <span class="expand-icon" style="">▼</span>
+      </div>
+      
+    <div class="people-section">
+      <button class="people-toggle" onclick="togglePeople(event,'pssm-ktlo-ai')">👥 1 member ▲</button>
+      <div class="people-list" id="people-pssm-ktlo-ai" style=""><div class="person-row">
+    <div class="avatar">RF</div>
+    <div class="person-info">
+      <span class="person-name">Reymart Fernandez</span>
+      <span class="role-chip"><span class="role-full">Product Owner</span><span class="role-short">PO</span></span>
+      
+    </div>
+    <div class="person-meta">
+      <span class="flag-icon">🇵🇭</span>
+      <span class="cl-tag">9 - Consultant</span>
+    </div>
+  </div></div>
+    </div>
+    </div>
+    
+    <div class="children-connector" id="conn-pssm-ktlo-ai" style="">
+      <div class="vline"></div>
+      <div class="children-row" id="children-pssm-ktlo-ai">
+        <div class="child-col" style="">
+  <div class="tree-node" id="node-pssm-ktlo-ai-dc1" data-level="4">
+    <div class="node-card node-l3-pssm" style="min-height: 70px;">
+      <div class="node-header">
+        <span class="node-name">DevCell 1</span>
+        <span class="count-badge">5</span>
+        
+      </div>
+      
+    <div class="people-section">
+      <button class="people-toggle" onclick="togglePeople(event,'pssm-ktlo-ai-dc1')">👥 5 members ▲</button>
+      <div class="people-list" id="people-pssm-ktlo-ai-dc1" style=""><div class="person-row">
+    <div class="avatar">CF</div>
+    <div class="person-info">
+      <span class="person-name">Camillia Figueroa</span>
+      <span class="role-chip"><span class="role-full">Developer</span><span class="role-short">D</span></span>
+      
+    </div>
+    <div class="person-meta">
+      <span class="flag-icon">🇵🇭</span>
+      <span class="cl-tag">12 - Associate</span>
+    </div>
+  </div><div class="person-row">
+    <div class="avatar">CN</div>
+    <div class="person-info">
+      <span class="person-name">Carla Nicole Martija</span>
+      <span class="role-chip"><span class="role-full">Developer</span><span class="role-short">D</span></span>
+      
+    </div>
+    <div class="person-meta">
+      <span class="flag-icon">🇵🇭</span>
+      <span class="cl-tag">11 - Analyst</span>
+    </div>
+  </div><div class="person-row">
+    <div class="avatar">CS</div>
+    <div class="person-info">
+      <span class="person-name">Charlotte Sison</span>
+      <span class="role-chip"><span class="role-full">Lead Developer</span><span class="role-short">D-SRE</span></span>
+      
+    </div>
+    <div class="person-meta">
+      <span class="flag-icon">🇵🇭</span>
+      <span class="cl-tag">11 - Analyst</span>
+    </div>
+  </div><div class="person-row">
+    <div class="avatar">PG</div>
+    <div class="person-info">
+      <span class="person-name">Pablo G. Cruz</span><span class="multi-hat" title="3 assignments">⊕3</span>
+      <span class="role-chip"><span class="role-full">Scrum master</span><span class="role-short">SM</span></span>
+      
+    </div>
+    <div class="person-meta">
+      <span class="flag-icon">🇵🇭</span>
+      <span class="cl-tag">10 - Analyst</span>
+    </div>
+  </div><div class="person-row">
+    <div class="avatar">PJ</div>
+    <div class="person-info">
+      <span class="person-name">Patrick J. Magcalas</span>
+      <span class="role-chip"><span class="role-full">Developer</span><span class="role-short">D</span></span>
+      
+    </div>
+    <div class="person-meta">
+      <span class="flag-icon">🇵🇭</span>
+      <span class="cl-tag">12 - Associate</span>
+    </div>
+  </div></div>
+    </div>
+    </div>
+    
+  </div></div><div class="child-col" style="">
+  <div class="tree-node" id="node-pssm-ktlo-ai-dc2" data-level="4">
+    <div class="node-card node-l3-pssm" style="min-height: 70px;">
+      <div class="node-header">
+        <span class="node-name">DevCell 2</span>
+        <span class="count-badge">4</span>
+        
+      </div>
+      
+    <div class="people-section">
+      <button class="people-toggle" onclick="togglePeople(event,'pssm-ktlo-ai-dc2')">👥 4 members ▲</button>
+      <div class="people-list" id="people-pssm-ktlo-ai-dc2" style=""><div class="person-row">
+    <div class="avatar">DR</div>
+    <div class="person-info">
+      <span class="person-name">Deniel Ryan Sugay</span>
+      <span class="role-chip"><span class="role-full">Developer</span><span class="role-short">D</span></span>
+      
+    </div>
+    <div class="person-meta">
+      <span class="flag-icon">🇵🇭</span>
+      <span class="cl-tag">12 - Associate</span>
+    </div>
+  </div><div class="person-row">
+    <div class="avatar">EE</div>
+    <div class="person-info">
+      <span class="person-name">Enrico Endozo</span>
+      <span class="role-chip"><span class="role-full">Lead Developer</span><span class="role-short">D-SRE</span></span>
+      
+    </div>
+    <div class="person-meta">
+      <span class="flag-icon">🇵🇭</span>
+      <span class="cl-tag">10 - Analyst</span>
+    </div>
+  </div><div class="person-row">
+    <div class="avatar">JM</div>
+    <div class="person-info">
+      <span class="person-name">Jan Marphi Pascual</span>
+      <span class="role-chip"><span class="role-full">Developer</span><span class="role-short">D</span></span>
+      
+    </div>
+    <div class="person-meta">
+      <span class="flag-icon">🇵🇭</span>
+      <span class="cl-tag">12 - Associate</span>
+    </div>
+  </div><div class="person-row">
+    <div class="avatar">JV</div>
+    <div class="person-info">
+      <span class="person-name">Jecille Villanueva</span>
+      <span class="role-chip"><span class="role-full">Developer</span><span class="role-short">D</span></span>
+      
+    </div>
+    <div class="person-meta">
+      <span class="flag-icon">🇵🇭</span>
+      <span class="cl-tag">12 - Associate</span>
+    </div>
+  </div></div>
+    </div>
+    </div>
+    
+  </div></div>
+      </div>
+    </div>
+  </div></div><div class="child-col">
+  <div class="tree-node" id="node-pssm-ktlo-co" data-level="3">
+    <div class="node-card node-l2-pssm" style="min-height: 81px;">
+      <div class="node-header">
+        <span class="node-name">Core Operations</span>
+        <span class="count-badge">20</span>
+        
+      </div>
+      
+    <div class="people-section">
+      <button class="people-toggle" onclick="togglePeople(event,'pssm-ktlo-co')">👥 20 members ▲</button>
+      <div class="people-list" id="people-pssm-ktlo-co" style=""><div class="person-row">
+    <div class="avatar">AB</div>
+    <div class="person-info">
+      <span class="person-name">Anthony B. Alden</span>
+      <span class="role-chip"><span class="role-full">Engineering</span><span class="role-short">D</span></span>
+      
+    </div>
+    <div class="person-meta">
+      <span class="flag-icon">🇵🇭</span>
+      <span class="cl-tag">9 - Consultant</span>
+    </div>
+  </div><div class="person-row">
+    <div class="avatar">AJ</div>
+    <div class="person-info">
+      <span class="person-name">Ashley J. Aurellano</span>
+      <span class="role-chip"><span class="role-full">Ops Support</span><span class="role-short">D</span></span>
+      
+    </div>
+    <div class="person-meta">
+      <span class="flag-icon">🇵🇭</span>
+      <span class="cl-tag">12 - Associate</span>
+    </div>
+  </div><div class="person-row">
+    <div class="avatar">BJ</div>
+    <div class="person-info">
+      <span class="person-name">Bernard J. Pabustan</span>
+      <span class="role-chip"><span class="role-full">Ops Support</span><span class="role-short">D</span></span>
+      
+    </div>
+    <div class="person-meta">
+      <span class="flag-icon">🇵🇭</span>
+      <span class="cl-tag">11 - Analyst</span>
+    </div>
+  </div><div class="person-row">
+    <div class="avatar">CP</div>
+    <div class="person-info">
+      <span class="person-name">Cyril Paynor</span>
+      <span class="role-chip"><span class="role-full">Engineering</span><span class="role-short">D</span></span>
+      
+    </div>
+    <div class="person-meta">
+      <span class="flag-icon">🇵🇭</span>
+      <span class="cl-tag">10 - Analyst</span>
+    </div>
+  </div><div class="person-row">
+    <div class="avatar">CR</div>
+    <div class="person-info">
+      <span class="person-name">Cyrus R. M. Ramos</span>
+      <span class="role-chip"><span class="role-full">Ops Support</span><span class="role-short">D</span></span>
+      
+    </div>
+    <div class="person-meta">
+      <span class="flag-icon">🇵🇭</span>
+      <span class="cl-tag">11 - Analyst</span>
+    </div>
+  </div><div class="person-row">
+    <div class="avatar">EM</div>
+    <div class="person-info">
+      <span class="person-name">Erika Mae G. Gascon</span>
+      <span class="role-chip"><span class="role-full">Ops Support</span><span class="role-short">D</span></span>
+      
+    </div>
+    <div class="person-meta">
+      <span class="flag-icon">🇵🇭</span>
+      <span class="cl-tag">10 - Analyst</span>
+    </div>
+  </div><div class="person-row">
+    <div class="avatar">JE</div>
+    <div class="person-info">
+      <span class="person-name">Jamica Era Gasga</span>
+      <span class="role-chip"><span class="role-full">Ops Support</span><span class="role-short">D</span></span>
+      
+    </div>
+    <div class="person-meta">
+      <span class="flag-icon">🇵🇭</span>
+      <span class="cl-tag">12 - Associate</span>
+    </div>
+  </div><div class="person-row">
+    <div class="avatar">JV</div>
+    <div class="person-info">
+      <span class="person-name">Jobelle Villareal</span>
+      <span class="role-chip"><span class="role-full">Product Owner</span><span class="role-short">PO</span></span>
+      
+    </div>
+    <div class="person-meta">
+      <span class="flag-icon">🇵🇭</span>
+      <span class="cl-tag">8 - Consultant</span>
+    </div>
+  </div><div class="person-row">
+    <div class="avatar">JL</div>
+    <div class="person-info">
+      <span class="person-name">Jomari L. Padillo</span>
+      <span class="role-chip"><span class="role-full">Ops Support</span><span class="role-short">D</span></span>
+      
+    </div>
+    <div class="person-meta">
+      <span class="flag-icon">🇵🇭</span>
+      <span class="cl-tag">11 - Analyst</span>
+    </div>
+  </div><div class="person-row">
+    <div class="avatar">JM</div>
+    <div class="person-info">
+      <span class="person-name">Joshua Mark Gelacio</span>
+      <span class="role-chip"><span class="role-full">Ops Support</span><span class="role-short">D</span></span>
+      
+    </div>
+    <div class="person-meta">
+      <span class="flag-icon">🇵🇭</span>
+      <span class="cl-tag">11 - Analyst</span>
+    </div>
+  </div><div class="person-row">
+    <div class="avatar">KR</div>
+    <div class="person-info">
+      <span class="person-name">Karthik R. Raju</span>
+      <span class="role-chip"><span class="role-full">Engineering</span><span class="role-short">D</span></span>
+      
+    </div>
+    <div class="person-meta">
+      <span class="flag-icon">🇮🇳</span>
+      <span class="cl-tag">9 - Consultant</span>
+    </div>
+  </div><div class="person-row">
+    <div class="avatar">LM</div>
+    <div class="person-info">
+      <span class="person-name">Lisa Marie Toledo</span><span class="multi-hat" title="2 assignments">⊕2</span>
+      <span class="role-chip"><span class="role-full">Ops Support</span><span class="role-short">D</span></span>
+      
+    </div>
+    <div class="person-meta">
+      <span class="flag-icon">🇺🇸</span>
+      <span class="cl-tag">10 - Analyst</span>
+    </div>
+  </div><div class="person-row">
+    <div class="avatar">MS</div>
+    <div class="person-info">
+      <span class="person-name">MA. Sofia M. Serafico</span>
+      <span class="role-chip"><span class="role-full">Ops Support</span><span class="role-short">D</span></span>
+      
+    </div>
+    <div class="person-meta">
+      <span class="flag-icon">🇵🇭</span>
+      <span class="cl-tag">10 - Analyst</span>
+    </div>
+  </div><div class="person-row">
+    <div class="avatar">MM</div>
+    <div class="person-info">
+      <span class="person-name">Manikanta MN.</span>
+      <span class="role-chip"><span class="role-full">Ops Support</span><span class="role-short">D</span></span>
+      
+    </div>
+    <div class="person-meta">
+      <span class="flag-icon">🇮🇳</span>
+      <span class="cl-tag">10 - Analyst</span>
+    </div>
+  </div><div class="person-row">
+    <div class="avatar">MA</div>
+    <div class="person-info">
+      <span class="person-name">Mary Ann Ranola</span>
+      <span class="role-chip"><span class="role-full">Ops Support</span><span class="role-short">D</span></span>
+      
+    </div>
+    <div class="person-meta">
+      <span class="flag-icon">🇵🇭</span>
+      <span class="cl-tag">12 - Associate</span>
+    </div>
+  </div><div class="person-row">
+    <div class="avatar">MM</div>
+    <div class="person-info">
+      <span class="person-name">Michelle Mista</span>
+      <span class="role-chip"><span class="role-full">Engineering</span><span class="role-short">D</span></span>
+      
+    </div>
+    <div class="person-meta">
+      <span class="flag-icon">🇵🇭</span>
+      <span class="cl-tag">9 - Consultant</span>
+    </div>
+  </div><div class="person-row">
+    <div class="avatar">PG</div>
+    <div class="person-info">
+      <span class="person-name">Pablo G. Cruz</span><span class="multi-hat" title="3 assignments">⊕3</span>
+      <span class="role-chip"><span class="role-full">Scrum master</span><span class="role-short">SM</span></span>
+      
+    </div>
+    <div class="person-meta">
+      <span class="flag-icon">🇵🇭</span>
+      <span class="cl-tag">10 - Analyst</span>
+    </div>
+  </div><div class="person-row">
+    <div class="avatar">RE</div>
+    <div class="person-info">
+      <span class="person-name">Romina Espindola</span>
+      <span class="role-chip"><span class="role-full">Engineering</span><span class="role-short">D</span></span>
+      
+    </div>
+    <div class="person-meta">
+      <span class="flag-icon">🇦🇷</span>
+      <span class="cl-tag">9 - Consultant</span>
+    </div>
+  </div><div class="person-row">
+    <div class="avatar">SJ</div>
+    <div class="person-info">
+      <span class="person-name">Santiago Joel Guzman</span>
+      <span class="role-chip"><span class="role-full">Ops Support</span><span class="role-short">D</span></span>
+      
+    </div>
+    <div class="person-meta">
+      <span class="flag-icon">🇦🇷</span>
+      <span class="cl-tag">10 - Analyst</span>
+    </div>
+  </div><div class="person-row">
+    <div class="avatar">YG</div>
+    <div class="person-info">
+      <span class="person-name">Yvonne Grace Marzan</span>
+      <span class="role-chip"><span class="role-full">Ops Support</span><span class="role-short">D</span></span>
+      
+    </div>
+    <div class="person-meta">
+      <span class="flag-icon">🇵🇭</span>
+      <span class="cl-tag">12 - Associate</span>
+    </div>
+  </div></div>
+    </div>
+    </div>
+    
+  </div></div>
+      </div>
+    </div>
+  </div></div><div class="child-col" style="">
+  <div class="tree-node" id="node-pssm-ai" data-level="2">
+    <div class="node-card node-l2-pssm" style="min-height: 81px;">
+      <div class="node-header">
+        <span class="node-name">AI Accelerated PSSM</span>
+        <span class="count-badge">5</span>
+        
+      </div>
+      
+    <div class="people-section">
+      <button class="people-toggle" onclick="togglePeople(event,'pssm-ai')">👥 5 members ▲</button>
+      <div class="people-list" id="people-pssm-ai" style=""><div class="person-row">
+    <div class="avatar">DS</div>
+    <div class="person-info">
+      <span class="person-name">Delf Scheel</span>
+      <span class="role-chip"><span class="role-full">Product Area Manager</span><span class="role-short">PAM</span></span>
+      
+    </div>
+    <div class="person-meta">
+      <span class="flag-icon">🇩🇪</span>
+      <span class="cl-tag">6 - Senior Manager</span>
+    </div>
+  </div><div class="person-row">
+    <div class="avatar">DJ</div>
+    <div class="person-info">
+      <span class="person-name">Dona Joy Soliman</span>
+      <span class="role-chip"><span class="role-full">Scrum Master</span><span class="role-short">SM</span></span>
+      
+    </div>
+    <div class="person-meta">
+      <span class="flag-icon">🇵🇭</span>
+      <span class="cl-tag">10 - Analyst</span>
+    </div>
+  </div><div class="person-row">
+    <div class="avatar">GM</div>
+    <div class="person-info">
+      <span class="person-name">Gabriel Montanez JR.</span><span class="multi-hat" title="2 assignments">⊕2</span>
+      <span class="role-chip"><span class="role-full">Tech Arch</span><span class="role-short">TA</span></span>
+      
+    </div>
+    <div class="person-meta">
+      <span class="flag-icon">🇵🇭</span>
+      <span class="cl-tag">9 - Consultant</span>
+    </div>
+  </div><div class="person-row">
+    <div class="avatar">NS</div>
+    <div class="person-info">
+      <span class="person-name">Naveen S. Setty</span><span class="multi-hat" title="3 assignments">⊕3</span>
+      <span class="role-chip"><span class="role-full">Solution Architect</span><span class="role-short">SA</span></span>
+      
+    </div>
+    <div class="person-meta">
+      <span class="flag-icon">🇮🇳</span>
+      <span class="cl-tag">7 - Manager</span>
+    </div>
+  </div><div class="person-row">
+    <div class="avatar">SG</div>
+    <div class="person-info">
+      <span class="person-name">Sarah G. Salihuddin</span>
+      <span class="role-chip"><span class="role-full">Program Manager</span><span class="role-short">PO</span></span>
+      
+    </div>
+    <div class="person-meta">
+      <span class="flag-icon">🇵🇭</span>
+      <span class="cl-tag">7 - Manager</span>
+    </div>
+  </div></div>
+    </div>
+    </div>
+    
+  </div></div><div class="child-col">
+  <div class="tree-node" id="node-pssm-csh" data-level="2">
+    <div class="node-card node-l2-pssm" style="min-height: 81px;">
+      <div class="node-header" onclick="toggleChildren('pssm-csh')">
+        <span class="node-name">CyberArk Secrets Hub</span>
+        <span class="count-badge">26</span>
+        <span class="expand-icon" style="transform: rotate(-90deg);">▼</span>
+      </div>
+      
+    <div class="people-section">
+      <button class="people-toggle" onclick="togglePeople(event,'pssm-csh')" style="">👥 5 members ▲</button>
+      <div class="people-list" id="people-pssm-csh" style=""><div class="person-row">
+    <div class="avatar">AB</div>
+    <div class="person-info">
+      <span class="person-name">Akshi Bhatia</span>
+      <span class="role-chip"><span class="role-full">Solution Architect</span><span class="role-short">SA</span></span>
+      
+    </div>
+    <div class="person-meta">
+      <span class="flag-icon">🇺🇸</span>
+      <span class="cl-tag">7 - Manager</span>
+    </div>
+  </div><div class="person-row">
+    <div class="avatar">CG</div>
+    <div class="person-info">
+      <span class="person-name">Christian G. Gonzalez</span>
+      <span class="role-chip"><span class="role-full">Program Manager</span><span class="role-short">PO</span></span>
+      
+    </div>
+    <div class="person-meta">
+      <span class="flag-icon">🇵🇭</span>
+      <span class="cl-tag">7 - Manager</span>
+    </div>
+  </div><div class="person-row">
+    <div class="avatar">KA</div>
+    <div class="person-info">
+      <span class="person-name">Kristel Aline Ocampo</span>
+      <span class="role-chip"><span class="role-full">Scrum Master</span><span class="role-short">SM</span></span>
+      
+    </div>
+    <div class="person-meta">
+      <span class="flag-icon">🇵🇭</span>
+      <span class="cl-tag">10 - Analyst</span>
+    </div>
+  </div><div class="person-row">
+    <div class="avatar">MA</div>
+    <div class="person-info">
+      <span class="person-name">Michael A. M. Wong</span>
+      <span class="role-chip"><span class="role-full">Tech Arch</span><span class="role-short">TA</span></span>
+      
+    </div>
+    <div class="person-meta">
+      <span class="flag-icon">🇵🇭</span>
+      <span class="cl-tag">8 - Consultant</span>
+    </div>
+  </div><div class="person-row">
+    <div class="avatar">NS</div>
+    <div class="person-info">
+      <span class="person-name">Naveen S. Setty</span><span class="multi-hat" title="3 assignments">⊕3</span>
+      <span class="role-chip"><span class="role-full">Solution Architect</span><span class="role-short">SA</span></span>
+      
+    </div>
+    <div class="person-meta">
+      <span class="flag-icon">🇮🇳</span>
+      <span class="cl-tag">7 - Manager</span>
+    </div>
+  </div></div>
+    </div>
+    </div>
+    
+    <div class="children-connector" id="conn-pssm-csh" style="display: none;">
+      <div class="vline"></div>
+      <div class="children-row" id="children-pssm-csh">
+        <div class="child-col" style="">
+  <div class="tree-node" id="node-pssm-csh-cio" data-level="3">
+    <div class="node-card node-l3-pssm" style="min-height: 81px;">
+      <div class="node-header">
+        <span class="node-name">CIONow/ISD Dashboarding</span>
+        <span class="count-badge">1</span>
+        
+      </div>
+      
+    <div class="people-section">
+      <button class="people-toggle" onclick="togglePeople(event,'pssm-csh-cio')">👥 1 member ▲</button>
+      <div class="people-list" id="people-pssm-csh-cio" style=""><div class="person-row">
+    <div class="avatar">JM</div>
+    <div class="person-info">
+      <span class="person-name">Jessa Matutina</span>
+      <span class="role-chip"><span class="role-full">Data Analyst</span><span class="role-short">DA</span></span>
+      
+    </div>
+    <div class="person-meta">
+      <span class="flag-icon">🇵🇭</span>
+      <span class="cl-tag">9 - Consultant</span>
+    </div>
+  </div></div>
+    </div>
+    </div>
+    
+  </div></div><div class="child-col">
+  <div class="tree-node" id="node-pssm-csh-cp" data-level="3">
+    <div class="node-card node-l3-pssm" style="min-height: 81px;">
+      <div class="node-header">
+        <span class="node-name">Core Program</span>
+        <span class="count-badge">3</span>
+        
+      </div>
+      
+    <div class="people-section">
+      <button class="people-toggle" onclick="togglePeople(event,'pssm-csh-cp')">👥 3 members ▲</button>
+      <div class="people-list" id="people-pssm-csh-cp" style=""><div class="person-row">
+    <div class="avatar">BT</div>
+    <div class="person-info">
+      <span class="person-name">Bobby Trinidad</span>
+      <span class="role-chip"><span class="role-full">Lead Engineer</span><span class="role-short">LE</span></span>
+      
+    </div>
+    <div class="person-meta">
+      <span class="flag-icon">🇵🇭</span>
+      <span class="cl-tag">9 - Consultant</span>
+    </div>
+  </div><div class="person-row">
+    <div class="avatar">MM</div>
+    <div class="person-info">
+      <span class="person-name">MA. Medesa R. Alcontin</span>
+      <span class="role-chip"><span class="role-full">Product Owner</span><span class="role-short">PO</span></span>
+      
+    </div>
+    <div class="person-meta">
+      <span class="flag-icon">🇵🇭</span>
+      <span class="cl-tag">9 - Consultant</span>
+    </div>
+  </div><div class="person-row">
+    <div class="avatar">MC</div>
+    <div class="person-info">
+      <span class="person-name">Marchil Cabilla</span>
+      <span class="role-chip"><span class="role-full">Data Analyst</span><span class="role-short">DA</span></span>
+      
+    </div>
+    <div class="person-meta">
+      <span class="flag-icon">❓</span>
+      <span class="cl-tag">N/A</span>
+    </div>
+  </div></div>
+    </div>
+    </div>
+    
+  </div></div><div class="child-col" style="">
+  <div class="tree-node" id="node-pssm-csh-esp2" data-level="3">
+    <div class="node-card node-l3-pssm" style="min-height: 81px;">
+      <div class="node-header">
+        <span class="node-name">ESP (Scrum 2)</span>
+        <span class="count-badge">3</span>
+        
+      </div>
+      
+    <div class="people-section">
+      <button class="people-toggle" onclick="togglePeople(event,'pssm-csh-esp2')">👥 4 members ▲</button>
+      <div class="people-list" id="people-pssm-csh-esp2" style=""><div class="person-row">
+    <div class="avatar">AL</div>
+    <div class="person-info">
+      <span class="person-name">Antoinette L. Felipe</span>
+      <span class="role-chip"><span class="role-full">Lead Developer</span><span class="role-short">D-SRE</span></span>
+      
+    </div>
+    <div class="person-meta">
+      <span class="flag-icon">🇵🇭</span>
+      <span class="cl-tag">11 - Analyst</span>
+    </div>
+  </div><div class="person-row">
+    <div class="avatar">EJ</div>
+    <div class="person-info">
+      <span class="person-name">Edlyn Joyce Hijastro</span>
+      <span class="role-chip"><span class="role-full">Developer</span><span class="role-short">D</span></span>
+      
+    </div>
+    <div class="person-meta">
+      <span class="flag-icon">🇵🇭</span>
+      <span class="cl-tag">12 - Associate</span>
+    </div>
+  </div><div class="person-row">
+    <div class="avatar">JD</div>
+    <div class="person-info">
+      <span class="person-name">Jayson Dorigo</span><span class="multi-hat" title="2 assignments">⊕2</span>
+      <span class="role-chip"><span class="role-full">Developer</span><span class="role-short">D</span></span>
+      
+    </div>
+    <div class="person-meta">
+      <span class="flag-icon">🇵🇭</span>
+      <span class="cl-tag">10 - Analyst</span>
+    </div>
+  </div><div class="person-row">
+    <div class="avatar">JD</div>
+    <div class="person-info">
+      <span class="person-name">Jayson Dorigo</span><span class="multi-hat" title="2 assignments">⊕2</span>
+      <span class="role-chip"><span class="role-full">Developer</span><span class="role-short">D</span></span>
+      
+    </div>
+    <div class="person-meta">
+      <span class="flag-icon">🇵🇭</span>
+      <span class="cl-tag">10 - Analyst</span>
+    </div>
+  </div></div>
+    </div>
+    </div>
+    
+  </div></div><div class="child-col" style="">
+  <div class="tree-node" id="node-pssm-csh-esp3" data-level="3">
+    <div class="node-card node-l3-pssm" style="min-height: 81px;">
+      <div class="node-header">
+        <span class="node-name">ESP+CAPP (Scrum 3)</span>
+        <span class="count-badge">4</span>
+        
+      </div>
+      
+    <div class="people-section">
+      <button class="people-toggle" onclick="togglePeople(event,'pssm-csh-esp3')">👥 4 members ▲</button>
+      <div class="people-list" id="people-pssm-csh-esp3" style=""><div class="person-row">
+    <div class="avatar">AP</div>
+    <div class="person-info">
+      <span class="person-name">Angie Pontanilla</span>
+      <span class="role-chip"><span class="role-full">Lead Developer</span><span class="role-short">D-SRE</span></span>
+      
+    </div>
+    <div class="person-meta">
+      <span class="flag-icon">🇵🇭</span>
+      <span class="cl-tag">10 - Analyst</span>
+    </div>
+  </div><div class="person-row">
+    <div class="avatar">JI</div>
+    <div class="person-info">
+      <span class="person-name">Jan Irene Catibog</span>
+      <span class="role-chip"><span class="role-full">Developer</span><span class="role-short">D</span></span>
+      
+    </div>
+    <div class="person-meta">
+      <span class="flag-icon">🇵🇭</span>
+      <span class="cl-tag">11 - Analyst</span>
+    </div>
+  </div><div class="person-row">
+    <div class="avatar">JP</div>
+    <div class="person-info">
+      <span class="person-name">Jim Philip Rivadelo</span>
+      <span class="role-chip"><span class="role-full">Developer</span><span class="role-short">D</span></span>
+      
+    </div>
+    <div class="person-meta">
+      <span class="flag-icon">🇵🇭</span>
+      <span class="cl-tag">12 - Associate</span>
+    </div>
+  </div><div class="person-row">
+    <div class="avatar">LM</div>
+    <div class="person-info">
+      <span class="person-name">Lisa Marie Toledo</span><span class="multi-hat" title="2 assignments">⊕2</span>
+      <span class="role-chip"><span class="role-full">Developer/Ops Support</span><span class="role-short">D</span></span>
+      
+    </div>
+    <div class="person-meta">
+      <span class="flag-icon">🇺🇸</span>
+      <span class="cl-tag">10 - Analyst</span>
+    </div>
+  </div></div>
+    </div>
+    </div>
+    
+  </div></div><div class="child-col" style="">
+  <div class="tree-node" id="node-pssm-csh-q1" data-level="3">
+    <div class="node-card node-l3-pssm" style="min-height: 81px;">
+      <div class="node-header">
+        <span class="node-name">Qualys+DAST+WIF (Scrum 1)</span>
+        <span class="count-badge">5</span>
+        
+      </div>
+      
+    <div class="people-section">
+      <button class="people-toggle" onclick="togglePeople(event,'pssm-csh-q1')">👥 5 members ▲</button>
+      <div class="people-list" id="people-pssm-csh-q1" style=""><div class="person-row">
+    <div class="avatar">CC</div>
+    <div class="person-info">
+      <span class="person-name">Clarence C. Ricafort</span>
+      <span class="role-chip"><span class="role-full">Lead Developer</span><span class="role-short">D-SRE</span></span>
+      
+    </div>
+    <div class="person-meta">
+      <span class="flag-icon">🇵🇭</span>
+      <span class="cl-tag">10 - Analyst</span>
+    </div>
+  </div><div class="person-row">
+    <div class="avatar">JR</div>
+    <div class="person-info">
+      <span class="person-name">Jeminah Rose D. Lajom</span>
+      <span class="role-chip"><span class="role-full">Developer</span><span class="role-short">D</span></span>
+      
+    </div>
+    <div class="person-meta">
+      <span class="flag-icon">🇵🇭</span>
+      <span class="cl-tag">11 - Analyst</span>
+    </div>
+  </div><div class="person-row">
+    <div class="avatar">JA</div>
+    <div class="person-info">
+      <span class="person-name">Jennelyn Adolfo</span>
+      <span class="role-chip"><span class="role-full">Developer</span><span class="role-short">D</span></span>
+      
+    </div>
+    <div class="person-meta">
+      <span class="flag-icon">🇵🇭</span>
+      <span class="cl-tag">12 - Associate</span>
+    </div>
+  </div><div class="person-row">
+    <div class="avatar">JJ</div>
+    <div class="person-info">
+      <span class="person-name">Jerald Jay Torres</span>
+      <span class="role-chip"><span class="role-full">Developer</span><span class="role-short">D</span></span>
+      
+    </div>
+    <div class="person-meta">
+      <span class="flag-icon">🇵🇭</span>
+      <span class="cl-tag">12 - Associate</span>
+    </div>
+  </div><div class="person-row">
+    <div class="avatar">JA</div>
+    <div class="person-info">
+      <span class="person-name">Jeshell Ann Butaslac</span>
+      <span class="role-chip"><span class="role-full">Developer</span><span class="role-short">D</span></span>
+      
+    </div>
+    <div class="person-meta">
+      <span class="flag-icon">❓</span>
+      <span class="cl-tag">N/A</span>
+    </div>
+  </div></div>
+    </div>
+    </div>
+    
+  </div></div><div class="child-col" style="">
+  <div class="tree-node" id="node-pssm-csh-wif" data-level="3">
+    <div class="node-card node-l3-pssm" style="min-height: 81px;">
+      <div class="node-header">
+        <span class="node-name">WIF/Decom Hashi (Scrum 4)</span>
+        <span class="count-badge">5</span>
+        
+      </div>
+      
+    <div class="people-section">
+      <button class="people-toggle" onclick="togglePeople(event,'pssm-csh-wif')">👥 5 members ▲</button>
+      <div class="people-list" id="people-pssm-csh-wif" style=""><div class="person-row">
+    <div class="avatar">AM</div>
+    <div class="person-info">
+      <span class="person-name">Ali Mimbisa</span><span class="multi-hat" title="2 assignments">⊕2</span>
+      <span class="role-chip"><span class="role-full">Developer</span><span class="role-short">D</span></span>
+      
+    </div>
+    <div class="person-meta">
+      <span class="flag-icon">🇵🇭</span>
+      <span class="cl-tag">11 - Analyst</span>
+    </div>
+  </div><div class="person-row">
+    <div class="avatar">AV</div>
+    <div class="person-info">
+      <span class="person-name">Arthur Valerio</span>
+      <span class="role-chip"><span class="role-full">Ops Support</span><span class="role-short">D</span></span>
+      
+    </div>
+    <div class="person-meta">
+      <span class="flag-icon">🇵🇭</span>
+      <span class="cl-tag">10 - Analyst</span>
+    </div>
+  </div><div class="person-row">
+    <div class="avatar">CG</div>
+    <div class="person-info">
+      <span class="person-name">Carl Gene Macaspac</span>
+      <span class="role-chip"><span class="role-full">Developer</span><span class="role-short">D</span></span>
+      
+    </div>
+    <div class="person-meta">
+      <span class="flag-icon">🇵🇭</span>
+      <span class="cl-tag">11 - Analyst</span>
+    </div>
+  </div><div class="person-row">
+    <div class="avatar">DJ</div>
+    <div class="person-info">
+      <span class="person-name">Darryl John G. Reyes</span>
+      <span class="role-chip"><span class="role-full">Developer</span><span class="role-short">D</span></span>
+      
+    </div>
+    <div class="person-meta">
+      <span class="flag-icon">🇵🇭</span>
+      <span class="cl-tag">10 - Analyst</span>
+    </div>
+  </div><div class="person-row">
+    <div class="avatar">RA</div>
+    <div class="person-info">
+      <span class="person-name">Ranjie Anthony YU.</span>
+      <span class="role-chip"><span class="role-full">Lead Developer</span><span class="role-short">D-SRE</span></span>
+      
+    </div>
+    <div class="person-meta">
+      <span class="flag-icon">🇵🇭</span>
+      <span class="cl-tag">12 - Associate</span>
+    </div>
+  </div></div>
+    </div>
+    </div>
+    
+  </div></div>
+      </div>
+    </div>
+  </div></div>
+      </div>
+    </div>
+  </div></div><div class="child-col">
+  <div class="tree-node" id="node-warc" data-level="1">
+    <div class="node-card node-l1-warc" style="min-height: 67px;">
+      <div class="node-header" onclick="toggleChildren('warc')">
+        <span class="node-name">WARC</span>
+        <span class="count-badge">32</span>
+        <span class="expand-icon">▼</span>
+      </div>
+      
+    <div class="people-section">
+      <button class="people-toggle" onclick="togglePeople(event,'warc')" style="">👥 1 member ▲</button>
+      <div class="people-list" id="people-warc" style=""><div class="person-row">
+    <div class="avatar">FB</div>
+    <div class="person-info">
+      <span class="person-name">Federico Becker</span>
+      <span class="role-chip"><span class="role-full">Product Area Manager</span><span class="role-short">PAM</span></span>
+      
+    </div>
+    <div class="person-meta">
+      <span class="flag-icon">🇦🇷</span>
+      <span class="cl-tag">7 - Manager</span>
+    </div>
+  </div></div>
+    </div>
+    </div>
+    
+    <div class="children-connector" id="conn-warc">
+      <div class="vline"></div>
+      <div class="children-row" id="children-warc">
+        <div class="child-col">
+  <div class="tree-node" id="node-warc-aam" data-level="2">
+    <div class="node-card node-l2-warc" style="min-height: 81px;">
+      <div class="node-header" onclick="toggleChildren('warc-aam')">
+        <span class="node-name">AAM_PIM_CIEM</span>
+        <span class="count-badge">12</span>
+        <span class="expand-icon" style="transform: rotate(-90deg);">▼</span>
+      </div>
+      
+    <div class="people-section">
+      <button class="people-toggle" onclick="togglePeople(event,'warc-aam')">👥 2 members ▲</button>
+      <div class="people-list" id="people-warc-aam" style=""><div class="person-row">
+    <div class="avatar">JP</div>
+    <div class="person-info">
+      <span class="person-name">Jordan Porter</span><span class="multi-hat" title="3 assignments">⊕3</span>
+      <span class="role-chip"><span class="role-full">Scrum Master</span><span class="role-short">SM</span></span>
+      
+    </div>
+    <div class="person-meta">
+      <span class="flag-icon">🇺🇸</span>
+      <span class="cl-tag">7 - Manager</span>
+    </div>
+  </div><div class="person-row">
+    <div class="avatar">RJ</div>
+    <div class="person-info">
+      <span class="person-name">Ronald J. Woody</span>
+      <span class="role-chip"><span class="role-full">Product Owner</span><span class="role-short">PO</span></span>
+      
+    </div>
+    <div class="person-meta">
+      <span class="flag-icon">🇺🇸</span>
+      <span class="cl-tag">7 - Manager</span>
+    </div>
+  </div></div>
+    </div>
+    </div>
+    
+    <div class="children-connector" id="conn-warc-aam" style="display: none;">
+      <div class="vline"></div>
+      <div class="children-row" id="children-warc-aam">
+        <div class="child-col" style="">
+  <div class="tree-node" id="node-warc-aam-ai" data-level="3">
+    <div class="node-card node-l3-warc" style="min-height: 81px;">
+      <div class="node-header">
+        <span class="node-name">Application Integration</span>
+        <span class="count-badge">6</span>
+        
+      </div>
+      
+    <div class="people-section">
+      <button class="people-toggle" onclick="togglePeople(event,'warc-aam-ai')">👥 6 members ▲</button>
+      <div class="people-list" id="people-warc-aam-ai" style=""><div class="person-row">
+    <div class="avatar">HN</div>
+    <div class="person-info">
+      <span class="person-name">Hector Nino N. Alivio</span><span class="multi-hat" title="2 assignments">⊕2</span>
+      <span class="role-chip"><span class="role-full">Tech Arch</span><span class="role-short">TA</span></span>
+      
+    </div>
+    <div class="person-meta">
+      <span class="flag-icon">🇵🇭</span>
+      <span class="cl-tag">10 - Analyst</span>
+    </div>
+  </div><div class="person-row">
+    <div class="avatar">JK</div>
+    <div class="person-info">
+      <span class="person-name">Jeanne Krista L. Cruz</span>
+      <span class="role-chip"><span class="role-full">Tech Arch</span><span class="role-short">TA</span></span>
+      
+    </div>
+    <div class="person-meta">
+      <span class="flag-icon">🇵🇭</span>
+      <span class="cl-tag">9 - Consultant</span>
+    </div>
+  </div><div class="person-row">
+    <div class="avatar">JW</div>
+    <div class="person-info">
+      <span class="person-name">John Wilbert N. Lim</span>
+      <span class="role-chip"><span class="role-full">Lead Developer</span><span class="role-short">D-SRE</span></span>
+      
+    </div>
+    <div class="person-meta">
+      <span class="flag-icon">🇵🇭</span>
+      <span class="cl-tag">9 - Consultant</span>
+    </div>
+  </div><div class="person-row">
+    <div class="avatar">RJ</div>
+    <div class="person-info">
+      <span class="person-name">Raphael J. N. Esconde</span>
+      <span class="role-chip"><span class="role-full">Developer</span><span class="role-short">D</span></span>
+      
+    </div>
+    <div class="person-meta">
+      <span class="flag-icon">🇵🇭</span>
+      <span class="cl-tag">10 - Analyst</span>
+    </div>
+  </div><div class="person-row">
+    <div class="avatar">TB</div>
+    <div class="person-info">
+      <span class="person-name">Thippeswamy B. S.</span><span class="multi-hat" title="2 assignments">⊕2</span>
+      <span class="role-chip"><span class="role-full">Team Lead</span><span class="role-short">TL</span></span>
+      
+    </div>
+    <div class="person-meta">
+      <span class="flag-icon">🇮🇳</span>
+      <span class="cl-tag">8 - Consultant</span>
+    </div>
+  </div><div class="person-row">
+    <div class="avatar">WR</div>
+    <div class="person-info">
+      <span class="person-name">Wesley R. Kittrell</span><span class="multi-hat" title="3 assignments">⊕3</span>
+      <span class="role-chip"><span class="role-full">Technical Security Manager</span><span class="role-short">TSM</span></span>
+      
+    </div>
+    <div class="person-meta">
+      <span class="flag-icon">🇺🇸</span>
+      <span class="cl-tag">7 - Manager</span>
+    </div>
+  </div></div>
+    </div>
+    </div>
+    
+  </div></div><div class="child-col" style="">
+  <div class="tree-node" id="node-warc-aam-co" data-level="3">
+    <div class="node-card node-l3-warc" style="min-height: 81px;">
+      <div class="node-header">
+        <span class="node-name">Core Operations</span>
+        <span class="count-badge">8</span>
+        
+      </div>
+      
+    <div class="people-section">
+      <button class="people-toggle" onclick="togglePeople(event,'warc-aam-co')">👥 8 members ▲</button>
+      <div class="people-list" id="people-warc-aam-co" style=""><div class="person-row">
+    <div class="avatar">AM</div>
+    <div class="person-info">
+      <span class="person-name">Airez Mogol</span>
+      <span class="role-chip"><span class="role-full">Ops Support</span><span class="role-short">D</span></span>
+      
+    </div>
+    <div class="person-meta">
+      <span class="flag-icon">🇵🇭</span>
+      <span class="cl-tag">12 - Associate</span>
+    </div>
+  </div><div class="person-row">
+    <div class="avatar">HN</div>
+    <div class="person-info">
+      <span class="person-name">Hector Nino N. Alivio</span><span class="multi-hat" title="2 assignments">⊕2</span>
+      <span class="role-chip"><span class="role-full">Tech Arch</span><span class="role-short">TA</span></span>
+      
+    </div>
+    <div class="person-meta">
+      <span class="flag-icon">🇵🇭</span>
+      <span class="cl-tag">10 - Analyst</span>
+    </div>
+  </div><div class="person-row">
+    <div class="avatar">JP</div>
+    <div class="person-info">
+      <span class="person-name">Jordan Porter</span><span class="multi-hat" title="3 assignments">⊕3</span>
+      <span class="role-chip"><span class="role-full">Scrum Master</span><span class="role-short">SM</span></span>
+      
+    </div>
+    <div class="person-meta">
+      <span class="flag-icon">🇺🇸</span>
+      <span class="cl-tag">7 - Manager</span>
+    </div>
+  </div><div class="person-row">
+    <div class="avatar">LM</div>
+    <div class="person-info">
+      <span class="person-name">Lenie M. Villabeto</span>
+      <span class="role-chip"><span class="role-full">Ops Support</span><span class="role-short">D</span></span>
+      
+    </div>
+    <div class="person-meta">
+      <span class="flag-icon">🇵🇭</span>
+      <span class="cl-tag">12 - Associate</span>
+    </div>
+  </div><div class="person-row">
+    <div class="avatar">LR</div>
+    <div class="person-info">
+      <span class="person-name">Lovely Rose Tuazon</span>
+      <span class="role-chip"><span class="role-full">Ops Support</span><span class="role-short">D</span></span>
+      
+    </div>
+    <div class="person-meta">
+      <span class="flag-icon">🇵🇭</span>
+      <span class="cl-tag">10 - Analyst</span>
+    </div>
+  </div><div class="person-row">
+    <div class="avatar">NC</div>
+    <div class="person-info">
+      <span class="person-name">Nino Christian Ruizo</span>
+      <span class="role-chip"><span class="role-full">Ops Support</span><span class="role-short">D</span></span>
+      
+    </div>
+    <div class="person-meta">
+      <span class="flag-icon">🇵🇭</span>
+      <span class="cl-tag">11 - Analyst</span>
+    </div>
+  </div><div class="person-row">
+    <div class="avatar">TB</div>
+    <div class="person-info">
+      <span class="person-name">Thippeswamy B. S.</span><span class="multi-hat" title="2 assignments">⊕2</span>
+      <span class="role-chip"><span class="role-full">Ops Lead</span><span class="role-short">D</span></span>
+      
+    </div>
+    <div class="person-meta">
+      <span class="flag-icon">🇮🇳</span>
+      <span class="cl-tag">8 - Consultant</span>
+    </div>
+  </div><div class="person-row">
+    <div class="avatar">WR</div>
+    <div class="person-info">
+      <span class="person-name">Wesley R. Kittrell</span><span class="multi-hat" title="3 assignments">⊕3</span>
+      <span class="role-chip"><span class="role-full">Technical Security Manager</span><span class="role-short">TSM</span></span>
+      
+    </div>
+    <div class="person-meta">
+      <span class="flag-icon">🇺🇸</span>
+      <span class="cl-tag">7 - Manager</span>
+    </div>
+  </div></div>
+    </div>
+    </div>
+    
+  </div></div>
+      </div>
+    </div>
+  </div></div><div class="child-col">
+  <div class="tree-node" id="node-warc-paw" data-level="2">
+    <div class="node-card node-l2-warc" style="min-height: 81px;">
+      <div class="node-header" onclick="toggleChildren('warc-paw')">
+        <span class="node-name">PAW</span>
+        <span class="count-badge">12</span>
+        <span class="expand-icon" style="transform: rotate(-90deg);">▼</span>
+      </div>
+      
+    <div class="people-section">
+      <button class="people-toggle" onclick="togglePeople(event,'warc-paw')">👥 1 member ▲</button>
+      <div class="people-list" id="people-warc-paw" style=""><div class="person-row">
+    <div class="avatar">RA</div>
+    <div class="person-info">
+      <span class="person-name">Ryan A. Bach</span><span class="multi-hat" title="2 assignments">⊕2</span>
+      <span class="role-chip"><span class="role-full">Product Owner</span><span class="role-short">PO</span></span>
+      
+    </div>
+    <div class="person-meta">
+      <span class="flag-icon">🇺🇸</span>
+      <span class="cl-tag">8 - Consultant</span>
+    </div>
+  </div></div>
+    </div>
+    </div>
+    
+    <div class="children-connector" id="conn-warc-paw" style="display: none;">
+      <div class="vline"></div>
+      <div class="children-row" id="children-warc-paw">
+        <div class="child-col" style="">
+  <div class="tree-node" id="node-warc-paw-co" data-level="3">
+    <div class="node-card node-l3-warc" style="min-height: 81px;">
+      <div class="node-header">
+        <span class="node-name">Core Operations</span>
+        <span class="count-badge">9</span>
+        
+      </div>
+      
+    <div class="people-section">
+      <button class="people-toggle" onclick="togglePeople(event,'warc-paw-co')">👥 9 members ▲</button>
+      <div class="people-list" id="people-warc-paw-co" style=""><div class="person-row">
+    <div class="avatar">AL</div>
+    <div class="person-info">
+      <span class="person-name">Ana L. Garcia</span><span class="multi-hat" title="2 assignments">⊕2</span>
+      <span class="role-chip"><span class="role-full">Scrum Master</span><span class="role-short">SM</span></span>
+      
+    </div>
+    <div class="person-meta">
+      <span class="flag-icon">🇦🇷</span>
+      <span class="cl-tag">9 - Consultant</span>
+    </div>
+  </div><div class="person-row">
+    <div class="avatar">BT</div>
+    <div class="person-info">
+      <span class="person-name">Bhaskar Toutu</span>
+      <span class="role-chip"><span class="role-full">Developer</span><span class="role-short">D</span></span>
+      
+    </div>
+    <div class="person-meta">
+      <span class="flag-icon">🇮🇳</span>
+      <span class="cl-tag">9 - Consultant</span>
+    </div>
+  </div><div class="person-row">
+    <div class="avatar">BA</div>
+    <div class="person-info">
+      <span class="person-name">Brunda A. Subramani</span>
+      <span class="role-chip"><span class="role-full">Developer</span><span class="role-short">D</span></span>
+      
+    </div>
+    <div class="person-meta">
+      <span class="flag-icon">🇮🇳</span>
+      <span class="cl-tag">10 - Analyst</span>
+    </div>
+  </div><div class="person-row">
+    <div class="avatar">CJ</div>
+    <div class="person-info">
+      <span class="person-name">Christopher J. Redner</span>
+      <span class="role-chip"><span class="role-full">Tech Arch</span><span class="role-short">TA</span></span>
+      
+    </div>
+    <div class="person-meta">
+      <span class="flag-icon">🇺🇸</span>
+      <span class="cl-tag">9 - Consultant</span>
+    </div>
+  </div><div class="person-row">
+    <div class="avatar">NE</div>
+    <div class="person-info">
+      <span class="person-name">Nino Enrico Banzon</span>
+      <span class="role-chip"><span class="role-full">Developer</span><span class="role-short">D</span></span>
+      
+    </div>
+    <div class="person-meta">
+      <span class="flag-icon">🇵🇭</span>
+      <span class="cl-tag">10 - Analyst</span>
+    </div>
+  </div><div class="person-row">
+    <div class="avatar">PS</div>
+    <div class="person-info">
+      <span class="person-name">Prashant Sherkar</span>
+      <span class="role-chip"><span class="role-full">Developer</span><span class="role-short">D</span></span>
+      
+    </div>
+    <div class="person-meta">
+      <span class="flag-icon">🇮🇳</span>
+      <span class="cl-tag">10 - Analyst</span>
+    </div>
+  </div><div class="person-row">
+    <div class="avatar">SA</div>
+    <div class="person-info">
+      <span class="person-name">Sandeep Adhikari</span>
+      <span class="role-chip"><span class="role-full">Developer</span><span class="role-short">D</span></span>
+      
+    </div>
+    <div class="person-meta">
+      <span class="flag-icon">🇮🇳</span>
+      <span class="cl-tag">8 - Consultant</span>
+    </div>
+  </div><div class="person-row">
+    <div class="avatar">SC</div>
+    <div class="person-info">
+      <span class="person-name">Santiago C. Rodriguez</span>
+      <span class="role-chip"><span class="role-full">Developer</span><span class="role-short">D</span></span>
+      
+    </div>
+    <div class="person-meta">
+      <span class="flag-icon">🇦🇷</span>
+      <span class="cl-tag">10 - Analyst</span>
+    </div>
+  </div><div class="person-row">
+    <div class="avatar">SA</div>
+    <div class="person-info">
+      <span class="person-name">Shaik A. Sameer</span>
+      <span class="role-chip"><span class="role-full">Developer</span><span class="role-short">D</span></span>
+      
+    </div>
+    <div class="person-meta">
+      <span class="flag-icon">🇮🇳</span>
+      <span class="cl-tag">10 - Analyst</span>
+    </div>
+  </div></div>
+    </div>
+    </div>
+    
+  </div></div><div class="child-col" style="">
+  <div class="tree-node" id="node-warc-paw-t0" data-level="3">
+    <div class="node-card node-l3-warc" style="min-height: 81px;">
+      <div class="node-header">
+        <span class="node-name">Tier 0 Core Operations</span>
+        <span class="count-badge">2</span>
+        
+      </div>
+      
+    <div class="people-section">
+      <button class="people-toggle" onclick="togglePeople(event,'warc-paw-t0')">👥 2 members ▲</button>
+      <div class="people-list" id="people-warc-paw-t0" style=""><div class="person-row">
+    <div class="avatar">MG</div>
+    <div class="person-info">
+      <span class="person-name">Miguel German Koch</span><span class="multi-hat" title="2 assignments">⊕2</span>
+      <span class="role-chip"><span class="role-full">Ops Support / PIM Lead Admin</span><span class="role-short">D</span></span>
+      
+    </div>
+    <div class="person-meta">
+      <span class="flag-icon">🇦🇷</span>
+      <span class="cl-tag">8 - Consultant</span>
+    </div>
+  </div><div class="person-row">
+    <div class="avatar">SK</div>
+    <div class="person-info">
+      <span class="person-name">Sarah K. Wodarczyk</span><span class="multi-hat" title="2 assignments">⊕2</span>
+      <span class="role-chip"><span class="role-full">Lead Developer</span><span class="role-short">D-SRE</span></span>
+      
+    </div>
+    <div class="person-meta">
+      <span class="flag-icon">🇺🇸</span>
+      <span class="cl-tag">9 - Consultant</span>
+    </div>
+  </div></div>
+    </div>
+    </div>
+    
+  </div></div>
+      </div>
+    </div>
+  </div></div><div class="child-col" style="">
+  <div class="tree-node" id="node-warc-saam-p" data-level="2">
+    <div class="node-card node-l2-warc" style="min-height: 81px;">
+      <div class="node-header" onclick="toggleChildren('warc-saam-p')">
+        <span class="node-name">Secure Admin. Access Mgmt (Tier 0)</span>
+        <span class="count-badge">12</span>
+        <span class="expand-icon" style="transform: rotate(-90deg);">▼</span>
+      </div>
+      
+    <div class="people-section">
+      <button class="people-toggle" onclick="togglePeople(event,'warc-saam-p')">👥 4 members ▲</button>
+      <div class="people-list" id="people-warc-saam-p" style=""><div class="person-row">
+    <div class="avatar">JP</div>
+    <div class="person-info">
+      <span class="person-name">Jordan Porter</span><span class="multi-hat" title="3 assignments">⊕3</span>
+      <span class="role-chip"><span class="role-full">Scrum Master</span><span class="role-short">SM</span></span>
+      
+    </div>
+    <div class="person-meta">
+      <span class="flag-icon">🇺🇸</span>
+      <span class="cl-tag">7 - Manager</span>
+    </div>
+  </div><div class="person-row">
+    <div class="avatar">PW</div>
+    <div class="person-info">
+      <span class="person-name">Peter Wais</span>
+      <span class="role-chip"><span class="role-full">Tech Arch</span><span class="role-short">TA</span></span>
+      
+    </div>
+    <div class="person-meta">
+      <span class="flag-icon">🇺🇸</span>
+      <span class="cl-tag">7 - Manager</span>
+    </div>
+  </div><div class="person-row">
+    <div class="avatar">RA</div>
+    <div class="person-info">
+      <span class="person-name">Ryan A. Bach</span><span class="multi-hat" title="2 assignments">⊕2</span>
+      <span class="role-chip"><span class="role-full">Tech Arch</span><span class="role-short">TA</span></span>
+      
+    </div>
+    <div class="person-meta">
+      <span class="flag-icon">🇺🇸</span>
+      <span class="cl-tag">8 - Consultant</span>
+    </div>
+  </div><div class="person-row">
+    <div class="avatar">SC</div>
+    <div class="person-info">
+      <span class="person-name">Shubhra C. Jain</span>
+      <span class="role-chip"><span class="role-full">Program Manager</span><span class="role-short">PO</span></span>
+      
+    </div>
+    <div class="person-meta">
+      <span class="flag-icon">🇺🇸</span>
+      <span class="cl-tag">7 - Manager</span>
+    </div>
+  </div></div>
+    </div>
+    </div>
+    
+    <div class="children-connector" id="conn-warc-saam-p" style="display: none;">
+      <div class="vline"></div>
+      <div class="children-row" id="children-warc-saam-p">
+        <div class="child-col" style="">
+  <div class="tree-node" id="node-warc-saam" data-level="3">
+    <div class="node-card node-l3-warc" style="min-height: 81px;">
+      <div class="node-header">
+        <span class="node-name">SAAM</span>
+        <span class="count-badge">8</span>
+        
+      </div>
+      
+    <div class="people-section">
+      <button class="people-toggle" onclick="togglePeople(event,'warc-saam')">👥 8 members ▲</button>
+      <div class="people-list" id="people-warc-saam" style=""><div class="person-row">
+    <div class="avatar">CV</div>
+    <div class="person-info">
+      <span class="person-name">Carlos Valvecchia</span>
+      <span class="role-chip"><span class="role-full">Business Analyst</span><span class="role-short">BA</span></span>
+      
+    </div>
+    <div class="person-meta">
+      <span class="flag-icon">🇦🇷</span>
+      <span class="cl-tag">8 - Consultant</span>
+    </div>
+  </div><div class="person-row">
+    <div class="avatar">DB</div>
+    <div class="person-info">
+      <span class="person-name">Darshini BR.</span>
+      <span class="role-chip"><span class="role-full">Business Analyst</span><span class="role-short">BA</span></span>
+      
+    </div>
+    <div class="person-meta">
+      <span class="flag-icon">🇮🇳</span>
+      <span class="cl-tag">8 - Consultant</span>
+    </div>
+  </div><div class="person-row">
+    <div class="avatar">GM</div>
+    <div class="person-info">
+      <span class="person-name">Gwyneth Manuel</span>
+      <span class="role-chip"><span class="role-full">Developer</span><span class="role-short">D</span></span>
+      
+    </div>
+    <div class="person-meta">
+      <span class="flag-icon">🇵🇭</span>
+      <span class="cl-tag">12 - Associate</span>
+    </div>
+  </div><div class="person-row">
+    <div class="avatar">MG</div>
+    <div class="person-info">
+      <span class="person-name">Michal Galas</span>
+      <span class="role-chip"><span class="role-full">Business Analyst</span><span class="role-short">BA</span></span>
+      
+    </div>
+    <div class="person-meta">
+      <span class="flag-icon">🇺🇸</span>
+      <span class="cl-tag">7 - Manager</span>
+    </div>
+  </div><div class="person-row">
+    <div class="avatar">MG</div>
+    <div class="person-info">
+      <span class="person-name">Miguel German Koch</span><span class="multi-hat" title="2 assignments">⊕2</span>
+      <span class="role-chip"><span class="role-full">Ops Support</span><span class="role-short">D</span></span>
+      
+    </div>
+    <div class="person-meta">
+      <span class="flag-icon">🇦🇷</span>
+      <span class="cl-tag">8 - Consultant</span>
+    </div>
+  </div><div class="person-row">
+    <div class="avatar">NW</div>
+    <div class="person-info">
+      <span class="person-name">NY. West</span>
+      <span class="role-chip"><span class="role-full">Business Analyst</span><span class="role-short">BA</span></span>
+      
+    </div>
+    <div class="person-meta">
+      <span class="flag-icon">🇺🇸</span>
+      <span class="cl-tag">9 - Consultant</span>
+    </div>
+  </div><div class="person-row">
+    <div class="avatar">SK</div>
+    <div class="person-info">
+      <span class="person-name">Sarah K. Wodarczyk</span><span class="multi-hat" title="2 assignments">⊕2</span>
+      <span class="role-chip"><span class="role-full">Business Analyst</span><span class="role-short">BA</span></span>
+      
+    </div>
+    <div class="person-meta">
+      <span class="flag-icon">🇺🇸</span>
+      <span class="cl-tag">9 - Consultant</span>
+    </div>
+  </div><div class="person-row">
+    <div class="avatar">WR</div>
+    <div class="person-info">
+      <span class="person-name">Wesley R. Kittrell</span><span class="multi-hat" title="3 assignments">⊕3</span>
+      <span class="role-chip"><span class="role-full">Technical Security Manager</span><span class="role-short">TSM</span></span>
+      
+    </div>
+    <div class="person-meta">
+      <span class="flag-icon">🇺🇸</span>
+      <span class="cl-tag">7 - Manager</span>
+    </div>
+  </div></div>
+    </div>
+    </div>
+    
+  </div></div>
+      </div>
+    </div>
+  </div></div>
+      </div>
+    </div>
+  </div></div>
+      </div>
+    </div>
+  </div></div>
+</div>
+
+<!-- PRINT ORG CHART (populated at PDF export time) -->
+<div id="printOrgChart"></div>
+
+<script src="https://unpkg.com/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js"></script>
+<script>
+// ────────────────────────────────────────────────────────────
+// DATA
+// ────────────────────────────────────────────────────────────
+const FTE_DATA = {
+  "a.kashinath.terdal":[{id:"68149",name:"Workload Identity Federation (Azure DevOps to Cloud - HashiCorp Vault replacement)",fte:1}],
+  "a.matias":[{id:"55576",name:"SaaS Re-platform and Coverage Expansion for CyberArk",fte:1}],
+  "abby.h.villanueva":[{id:"49391",name:"PAM - Password/Secret Key Mgmt. Services - DSR",fte:0.19},{id:"52377",name:"Privileged Access Workstation - DSR",fte:0.07},{id:"55970",name:"PAM - Password/Secret Key Mgmt. Services - App Bundle",fte:0.74}],
+  "adrian.m.f.hortelano":[{id:"68149",name:"Workload Identity Federation (Azure DevOps to Cloud - HashiCorp Vault replacement)",fte:1}],
+  "agustin.gamero":[{id:"49391",name:"PAM - Password/Secret Key Mgmt. Services - DSR",fte:0.2},{id:"52377",name:"Privileged Access Workstation - DSR",fte:0.07},{id:"55970",name:"PAM - Password/Secret Key Mgmt. Services - App Bundle",fte:0.73}],
+  "airez.mogol":[{id:"49391",name:"PAM - Password/Secret Key Mgmt. Services - DSR",fte:1}],
+  "akshi.bhatia":[{id:"49391",name:"PAM - Password/Secret Key Mgmt. Services - DSR",fte:0.06},{id:"49972",name:"Privilege Shared Secrets Management",fte:0.42},{id:"52377",name:"Privileged Access Workstation - DSR",fte:0.36},{id:"55970",name:"PAM - Password/Secret Key Mgmt. Services - App Bundle",fte:0.16}],
+  "alejandro.r.alamos":[{id:"49972",name:"Privilege Shared Secrets Management",fte:0.1},{id:"52119",name:"Secure Administrative Access Management",fte:0.1},{id:"55576",name:"SaaS Re-platform and Coverage Expansion for CyberArk",fte:0.1},{id:"68149",name:"Workload Identity Federation (Azure DevOps to Cloud - HashiCorp Vault replacement)",fte:0.1}],
+  "ali.mimbisa":[{id:"49972",name:"Privilege Shared Secrets Management",fte:1}],
+  "allisa.may.balatibat":[{id:"55576",name:"SaaS Re-platform and Coverage Expansion for CyberArk",fte:1}],
+  "alvin.j.delos.santos":[{id:"68149",name:"Workload Identity Federation (Azure DevOps to Cloud - HashiCorp Vault replacement)",fte:1}],
+  "ana.l.garcia":[{id:"52377",name:"Privileged Access Workstation - DSR",fte:1}],
+  "angie.pontanilla":[{id:"49972",name:"Privilege Shared Secrets Management",fte:1}],
+  "anthony.b.alden":[{id:"55576",name:"SaaS Re-platform and Coverage Expansion for CyberArk",fte:0.5},{id:"55970",name:"PAM - Password/Secret Key Mgmt. Services - App Bundle",fte:0.5}],
+  "antoinette.l.felipe":[{id:"49972",name:"Privilege Shared Secrets Management",fte:1}],
+  "archer.j.medrano":[{id:"49391",name:"PAM - Password/Secret Key Mgmt. Services - DSR",fte:0.34},{id:"52377",name:"Privileged Access Workstation - DSR",fte:0.33},{id:"55970",name:"PAM - Password/Secret Key Mgmt. Services - App Bundle",fte:0.33}],
+  "arthur.valerio":[{id:"49972",name:"Privilege Shared Secrets Management",fte:1}],
+  "ashley.j.aurellano":[{id:"55970",name:"PAM - Password/Secret Key Mgmt. Services - App Bundle",fte:1}],
+  "bai.amor.binasing":[{id:"55576",name:"SaaS Re-platform and Coverage Expansion for CyberArk",fte:1}],
+  "bernard.j.pabustan":[{id:"55970",name:"PAM - Password/Secret Key Mgmt. Services - App Bundle",fte:1}],
+  "bhaskar.toutu":[{id:"52377",name:"Privileged Access Workstation - DSR",fte:0.5}],
+  "billy.joe.salapare":[{id:"55576",name:"SaaS Re-platform and Coverage Expansion for CyberArk",fte:1}],
+  "bobby.trinidad":[{id:"49972",name:"Privilege Shared Secrets Management",fte:1}],
+  "brunda.a.subramani":[{id:"52377",name:"Privileged Access Workstation - DSR",fte:1}],
+  "c.x.herrera":[{id:"68270",name:"PAM - Password/Secret Key Mgmt. Services - App Bundle - PL&S",fte:1}],
+  "camillia.figueroa":[{id:"55970",name:"PAM - Password/Secret Key Mgmt. Services - App Bundle",fte:1}],
+  "carl.gene.macaspac":[{id:"49972",name:"Privilege Shared Secrets Management",fte:1}],
+  "carla.nicole.martija":[{id:"55970",name:"PAM - Password/Secret Key Mgmt. Services - App Bundle",fte:1}],
+  "carlos.valvecchia":[{id:"52119",name:"Secure Administrative Access Management",fte:0.5}],
+  "charlotte.sison":[{id:"55970",name:"PAM - Password/Secret Key Mgmt. Services - App Bundle",fte:1}],
+  "christian.g.gonzalez":[{id:"49972",name:"Privilege Shared Secrets Management",fte:1}],
+  "christopher.j.redner":[{id:"52377",name:"Privileged Access Workstation - DSR",fte:1}],
+  "clarence.c.ricafort":[{id:"49972",name:"Privilege Shared Secrets Management",fte:1}],
+  "cyril.paynor":[{id:"55970",name:"PAM - Password/Secret Key Mgmt. Services - App Bundle",fte:1}],
+  "cyrus.r.m.ramos":[{id:"55970",name:"PAM - Password/Secret Key Mgmt. Services - App Bundle",fte:1}],
+  "dann.paulo.javierto":[{id:"49391",name:"PAM - Password/Secret Key Mgmt. Services - DSR",fte:0.33},{id:"52377",name:"Privileged Access Workstation - DSR",fte:0.34},{id:"55970",name:"PAM - Password/Secret Key Mgmt. Services - App Bundle",fte:0.33}],
+  "darius.lacerna":[{id:"49391",name:"PAM - Password/Secret Key Mgmt. Services - DSR",fte:0.33},{id:"52377",name:"Privileged Access Workstation - DSR",fte:0.33},{id:"55970",name:"PAM - Password/Secret Key Mgmt. Services - App Bundle",fte:0.34}],
+  "darryl.john.g.reyes":[{id:"49972",name:"Privilege Shared Secrets Management",fte:1}],
+  "darshini.br":[{id:"52119",name:"Secure Administrative Access Management",fte:1}],
+  "dean.c.calera":[{id:"55576",name:"SaaS Re-platform and Coverage Expansion for CyberArk",fte:1}],
+  "delf.scheel":[{id:"49391",name:"PAM - Password/Secret Key Mgmt. Services - DSR",fte:0.19},{id:"52377",name:"Privileged Access Workstation - DSR",fte:0.06},{id:"55970",name:"PAM - Password/Secret Key Mgmt. Services - App Bundle",fte:0.75}],
+  "deniel.ryan.sugay":[{id:"55970",name:"PAM - Password/Secret Key Mgmt. Services - App Bundle",fte:1}],
+  "denize.vargas":[{id:"55576",name:"SaaS Re-platform and Coverage Expansion for CyberArk",fte:1}],
+  "dhivya.kanagaraj":[{id:"68149",name:"Workload Identity Federation (Azure DevOps to Cloud - HashiCorp Vault replacement)",fte:1}],
+  "dona.joy.soliman":[{id:"49391",name:"PAM - Password/Secret Key Mgmt. Services - DSR",fte:0.22},{id:"52377",name:"Privileged Access Workstation - DSR",fte:0.22},{id:"55576",name:"SaaS Re-platform and Coverage Expansion for CyberArk",fte:0.34},{id:"55970",name:"PAM - Password/Secret Key Mgmt. Services - App Bundle",fte:0.22}],
+  "edlyn.joyce.hijastro":[{id:"49972",name:"Privilege Shared Secrets Management",fte:1}],
+  "enrico.endozo":[{id:"55970",name:"PAM - Password/Secret Key Mgmt. Services - App Bundle",fte:1}],
+  "erika.mae.g.gascon":[{id:"55970",name:"PAM - Password/Secret Key Mgmt. Services - App Bundle",fte:1}],
+  "eurika.s.l.fajutag":[{id:"49391",name:"PAM - Password/Secret Key Mgmt. Services - DSR",fte:0.2},{id:"52377",name:"Privileged Access Workstation - DSR",fte:0.07},{id:"55970",name:"PAM - Password/Secret Key Mgmt. Services - App Bundle",fte:0.73}],
+  "federico.becker":[{id:"52377",name:"Privileged Access Workstation - DSR",fte:1}],
+  "florentino.riana":[{id:"52377",name:"Privileged Access Workstation - DSR",fte:0.33}],
+  "gabriel.montanez.jr":[{id:"55970",name:"PAM - Password/Secret Key Mgmt. Services - App Bundle",fte:1}],
+  "gwyneth.manuel":[{id:"52119",name:"Secure Administrative Access Management",fte:1}],
+  "hanicah.m.manguerra":[{id:"55576",name:"SaaS Re-platform and Coverage Expansion for CyberArk",fte:1}],
+  "hector.nino.n.alivio":[{id:"49391",name:"PAM - Password/Secret Key Mgmt. Services - DSR",fte:0.68},{id:"52377",name:"Privileged Access Workstation - DSR",fte:0.16},{id:"55970",name:"PAM - Password/Secret Key Mgmt. Services - App Bundle",fte:0.16}],
+  "ivan.c.pangilinan":[{id:"49391",name:"PAM - Password/Secret Key Mgmt. Services - DSR",fte:0.33},{id:"52377",name:"Privileged Access Workstation - DSR",fte:0.34},{id:"55970",name:"PAM - Password/Secret Key Mgmt. Services - App Bundle",fte:0.33}],
+  "j.l.pangatungan":[{id:"49391",name:"PAM - Password/Secret Key Mgmt. Services - DSR",fte:0.19},{id:"52377",name:"Privileged Access Workstation - DSR",fte:0.07},{id:"55970",name:"PAM - Password/Secret Key Mgmt. Services - App Bundle",fte:0.74}],
+  "jacoby.m.herbolario":[{id:"55970",name:"PAM - Password/Secret Key Mgmt. Services - App Bundle",fte:1}],
+  "jagadeesh.gandla":[{id:"68149",name:"Workload Identity Federation (Azure DevOps to Cloud - HashiCorp Vault replacement)",fte:1}],
+  "james.r.rociales":[{id:"55576",name:"SaaS Re-platform and Coverage Expansion for CyberArk",fte:1}],
+  "jamica.era.gasga":[{id:"55970",name:"PAM - Password/Secret Key Mgmt. Services - App Bundle",fte:1}],
+  "jan.irene.catibog":[{id:"49972",name:"Privilege Shared Secrets Management",fte:1}],
+  "jan.marphi.pascual":[{id:"55970",name:"PAM - Password/Secret Key Mgmt. Services - App Bundle",fte:1}],
+  "jayson.dorigo":[{id:"49972",name:"Privilege Shared Secrets Management",fte:1}],
+  "jeanne.krista.l.cruz":[{id:"49391",name:"PAM - Password/Secret Key Mgmt. Services - DSR",fte:1}],
+  "jecille.villanueva":[{id:"55970",name:"PAM - Password/Secret Key Mgmt. Services - App Bundle",fte:1}],
+  "jeminah.rose.d.lajom":[{id:"49972",name:"Privilege Shared Secrets Management",fte:1}],
+  "jennelyn.adolfo":[{id:"49972",name:"Privilege Shared Secrets Management",fte:1}],
+  "jerald.jay.torres":[{id:"49972",name:"Privilege Shared Secrets Management",fte:1}],
+  "jeremias.d.santiago":[{id:"55970",name:"PAM - Password/Secret Key Mgmt. Services - App Bundle",fte:1}],
+  "jeshell.may.butaslac":[{id:"68149",name:"Workload Identity Federation (Azure DevOps to Cloud - HashiCorp Vault replacement)",fte:1}],
+  "jessa.matutina":[{id:"49972",name:"Privilege Shared Secrets Management",fte:0.5},{id:"55576",name:"SaaS Re-platform and Coverage Expansion for CyberArk",fte:0.5}],
+  "jim.philip.rivadelo":[{id:"49972",name:"Privilege Shared Secrets Management",fte:1}],
+  "joanna.liza.abdon":[{id:"49391",name:"PAM - Password/Secret Key Mgmt. Services - DSR",fte:0.2},{id:"52377",name:"Privileged Access Workstation - DSR",fte:0.07},{id:"55970",name:"PAM - Password/Secret Key Mgmt. Services - App Bundle",fte:0.73}],
+  "jobelle.villareal":[{id:"55970",name:"PAM - Password/Secret Key Mgmt. Services - App Bundle",fte:1}],
+  "john.l.e.minoza":[{id:"55576",name:"SaaS Re-platform and Coverage Expansion for CyberArk",fte:1}],
+  "john.wilbert.n.lim":[{id:"49391",name:"PAM - Password/Secret Key Mgmt. Services - DSR",fte:1}],
+  "jomari.l.padillo":[{id:"55970",name:"PAM - Password/Secret Key Mgmt. Services - App Bundle",fte:1}],
+  "jonathan.non":[{id:"49391",name:"PAM - Password/Secret Key Mgmt. Services - DSR",fte:0.33},{id:"52377",name:"Privileged Access Workstation - DSR",fte:0.33},{id:"55970",name:"PAM - Password/Secret Key Mgmt. Services - App Bundle",fte:0.34}],
+  "jordan.porter":[{id:"49391",name:"PAM - Password/Secret Key Mgmt. Services - DSR",fte:0.54},{id:"52119",name:"Secure Administrative Access Management",fte:0.44}],
+  "joshua.almario":[{id:"49391",name:"PAM - Password/Secret Key Mgmt. Services - DSR",fte:0.34},{id:"52377",name:"Privileged Access Workstation - DSR",fte:0.33},{id:"55970",name:"PAM - Password/Secret Key Mgmt. Services - App Bundle",fte:0.33}],
+  "joshua.mark.gelacio":[{id:"55970",name:"PAM - Password/Secret Key Mgmt. Services - App Bundle",fte:1}],
+  "julie.a.l.de.guzman":[{id:"68149",name:"Workload Identity Federation (Azure DevOps to Cloud - HashiCorp Vault replacement)",fte:1}],
+  "karthik.r.raju":[{id:"55576",name:"SaaS Re-platform and Coverage Expansion for CyberArk",fte:0.5},{id:"55970",name:"PAM - Password/Secret Key Mgmt. Services - App Bundle",fte:0.5}],
+  "kathrina.macaraeg":[{id:"55576",name:"SaaS Re-platform and Coverage Expansion for CyberArk",fte:1}],
+  "kristel.aline.ocampo":[{id:"49972",name:"Privilege Shared Secrets Management",fte:1}],
+  "kudallur.santhosh":[{id:"68149",name:"Workload Identity Federation (Azure DevOps to Cloud - HashiCorp Vault replacement)",fte:0.25}],
+  "lenie.m.villabeto":[{id:"49391",name:"PAM - Password/Secret Key Mgmt. Services - DSR",fte:1}],
+  "lisa.marie.toledo":[{id:"49972",name:"Privilege Shared Secrets Management",fte:0.5},{id:"55970",name:"PAM - Password/Secret Key Mgmt. Services - App Bundle",fte:0.5}],
+  "lovely.rose.tuazon":[{id:"49391",name:"PAM - Password/Secret Key Mgmt. Services - DSR",fte:1}],
+  "ma.medesa.r.alcontin":[{id:"49972",name:"Privilege Shared Secrets Management",fte:1}],
+  "ma.sofia.m.serafico":[{id:"55970",name:"PAM - Password/Secret Key Mgmt. Services - App Bundle",fte:1}],
+  "manikanta.mn":[{id:"55970",name:"PAM - Password/Secret Key Mgmt. Services - App Bundle",fte:1}],
+  "marchil.cabilla":[{id:"68149",name:"Workload Identity Federation (Azure DevOps to Cloud - HashiCorp Vault replacement)",fte:1}],
+  "marella.f.del.mundo":[{id:"55576",name:"SaaS Re-platform and Coverage Expansion for CyberArk",fte:1}],
+  "maria.kathleen.ramos":[{id:"55576",name:"SaaS Re-platform and Coverage Expansion for CyberArk",fte:1}],
+  "mark.roy.acebuche":[{id:"55576",name:"SaaS Re-platform and Coverage Expansion for CyberArk",fte:1}],
+  "mary.ann.ranola":[{id:"55970",name:"PAM - Password/Secret Key Mgmt. Services - App Bundle",fte:1}],
+  "mary.j.santiago":[{id:"55576",name:"SaaS Re-platform and Coverage Expansion for CyberArk",fte:1}],
+  "meriam.b.patigayon":[{id:"49391",name:"PAM - Password/Secret Key Mgmt. Services - DSR",fte:0.2},{id:"52377",name:"Privileged Access Workstation - DSR",fte:0.07},{id:"55970",name:"PAM - Password/Secret Key Mgmt. Services - App Bundle",fte:0.73}],
+  "michael.a.m.wong":[{id:"49972",name:"Privilege Shared Secrets Management",fte:0.5},{id:"55970",name:"PAM - Password/Secret Key Mgmt. Services - App Bundle",fte:0.5}],
+  "michal.galas":[{id:"52119",name:"Secure Administrative Access Management",fte:0.25}],
+  "michelle.mista":[{id:"55970",name:"PAM - Password/Secret Key Mgmt. Services - App Bundle",fte:1}],
+  "miguel.german.koch":[{id:"49391",name:"PAM - Password/Secret Key Mgmt. Services - DSR",fte:1}],
+  "mikhail.a.mercado":[{id:"55576",name:"SaaS Re-platform and Coverage Expansion for CyberArk",fte:1}],
+  "naveen.s.setty":[{id:"49391",name:"PAM - Password/Secret Key Mgmt. Services - DSR",fte:0.25},{id:"49972",name:"Privilege Shared Secrets Management",fte:0.4},{id:"52377",name:"Privileged Access Workstation - DSR",fte:0.16},{id:"55970",name:"PAM - Password/Secret Key Mgmt. Services - App Bundle",fte:0.19}],
+  "nino.christian.ruizo":[{id:"49391",name:"PAM - Password/Secret Key Mgmt. Services - DSR",fte:1}],
+  "nino.enrico.banzon":[{id:"52377",name:"Privileged Access Workstation - DSR",fte:1}],
+  "ny.west":[{id:"52119",name:"Secure Administrative Access Management",fte:1}],
+  "pablo.g.cruz":[{id:"55970",name:"PAM - Password/Secret Key Mgmt. Services - App Bundle",fte:1}],
+  "patrick.j.magcalas":[{id:"55970",name:"PAM - Password/Secret Key Mgmt. Services - App Bundle",fte:1}],
+  "patrick.r.mendiola":[{id:"55576",name:"SaaS Re-platform and Coverage Expansion for CyberArk",fte:1}],
+  "peter.wais":[{id:"52119",name:"Secure Administrative Access Management",fte:1}],
+  "prashant.sherkar":[{id:"52377",name:"Privileged Access Workstation - DSR",fte:1}],
+  "queenie.c.so":[{id:"49391",name:"PAM - Password/Secret Key Mgmt. Services - DSR",fte:0.33},{id:"52377",name:"Privileged Access Workstation - DSR",fte:0.33},{id:"55970",name:"PAM - Password/Secret Key Mgmt. Services - App Bundle",fte:0.34}],
+  "rafael.gabriel.sare":[{id:"55576",name:"SaaS Re-platform and Coverage Expansion for CyberArk",fte:1}],
+  "ramil.v.franco":[{id:"55576",name:"SaaS Re-platform and Coverage Expansion for CyberArk",fte:0.5},{id:"55970",name:"PAM - Password/Secret Key Mgmt. Services - App Bundle",fte:0.5}],
+  "ranjie.anthony.yu":[{id:"49972",name:"Privilege Shared Secrets Management",fte:1}],
+  "raphael.j.n.esconde":[{id:"49391",name:"PAM - Password/Secret Key Mgmt. Services - DSR",fte:1}],
+  "reymart.fernandez":[{id:"55970",name:"PAM - Password/Secret Key Mgmt. Services - App Bundle",fte:1}],
+  "rochella.m.alcaide":[{id:"55576",name:"SaaS Re-platform and Coverage Expansion for CyberArk",fte:1}],
+  "romina.espindola":[{id:"55970",name:"PAM - Password/Secret Key Mgmt. Services - App Bundle",fte:1}],
+  "ronald.j.woody":[{id:"49391",name:"PAM - Password/Secret Key Mgmt. Services - DSR",fte:0.34},{id:"52377",name:"Privileged Access Workstation - DSR",fte:0.33},{id:"55970",name:"PAM - Password/Secret Key Mgmt. Services - App Bundle",fte:0.33}],
+  "ryan.a.bach":[{id:"49391",name:"PAM - Password/Secret Key Mgmt. Services - DSR",fte:0.25},{id:"52377",name:"Privileged Access Workstation - DSR",fte:0.68},{id:"55970",name:"PAM - Password/Secret Key Mgmt. Services - App Bundle",fte:0.07}],
+  "sandeep.adhikari":[{id:"52377",name:"Privileged Access Workstation - DSR",fte:0.25}],
+  "santiago.c.rodriguez":[{id:"52377",name:"Privileged Access Workstation - DSR",fte:1}],
+  "santiago.joel.guzman":[{id:"55970",name:"PAM - Password/Secret Key Mgmt. Services - App Bundle",fte:1}],
+  "sarah.g.salihuddin":[{id:"49391",name:"PAM - Password/Secret Key Mgmt. Services - DSR",fte:0.19},{id:"52377",name:"Privileged Access Workstation - DSR",fte:0.07},{id:"55970",name:"PAM - Password/Secret Key Mgmt. Services - App Bundle",fte:0.74}],
+  "sarah.k.wodarczyk":[{id:"49391",name:"PAM - Password/Secret Key Mgmt. Services - DSR",fte:0.75}],
+  "shaik.a.sameer":[{id:"52377",name:"Privileged Access Workstation - DSR",fte:1}],
+  "shubhra.c.jain":[{id:"52119",name:"Secure Administrative Access Management",fte:1}],
+  "somer.grace.torralba":[{id:"49391",name:"PAM - Password/Secret Key Mgmt. Services - DSR",fte:0.33},{id:"52377",name:"Privileged Access Workstation - DSR",fte:0.34},{id:"55970",name:"PAM - Password/Secret Key Mgmt. Services - App Bundle",fte:0.33}],
+  "staffing request":[{id:"49391",name:"PAM - Password/Secret Key Mgmt. Services - DSR",fte:0.5}],
+  "stephanie.m.almazan":[{id:"49391",name:"PAM - Password/Secret Key Mgmt. Services - DSR",fte:0.33},{id:"52377",name:"Privileged Access Workstation - DSR",fte:0.34},{id:"55970",name:"PAM - Password/Secret Key Mgmt. Services - App Bundle",fte:0.33}],
+  "svitlana.safrankova":[{id:"49391",name:"PAM - Password/Secret Key Mgmt. Services - DSR",fte:0.19},{id:"52377",name:"Privileged Access Workstation - DSR",fte:0.07},{id:"55970",name:"PAM - Password/Secret Key Mgmt. Services - App Bundle",fte:0.74}],
+  "thippeswamy.b.s":[{id:"49391",name:"PAM - Password/Secret Key Mgmt. Services - DSR",fte:1}],
+  "wesley.r.kittrell":[{id:"49391",name:"PAM - Password/Secret Key Mgmt. Services - DSR",fte:1}],
+  "x.s.penaranda":[{id:"55576",name:"SaaS Re-platform and Coverage Expansion for CyberArk",fte:0.5}],
+  "yvonne.grace.marzan":[{id:"55970",name:"PAM - Password/Secret Key Mgmt. Services - App Bundle",fte:1}]
+};
+
+// ────────────────────────────────────────────────────────────
+// MEMBERS
+// ────────────────────────────────────────────────────────────
+// Role abbreviations (Ref tab: abbrev → ITBA role, inverted + PAM team roles via Role_Mapping)
+const ROLE_ABBREV = {
+  'Agile Coach':'AC', 'Agile Developer':'AD',
+  'Business Analyst':'BA',
+  'Collaterals Mgmt':'DS',
+  'Data Analyst':'DA', 'Data Analyist':'DA',
+  'Developer':'D', 'Developer/Ops Support':'D',
+  'Domain Specialist':'DS',
+  'Developer/SRE (Service Reliability Engineering)':'D-SRE',
+  'Engineering':'D',
+  'Lead Developer':'D-SRE', 'Lead Engineer':'LE',
+  'Ops Lead':'D', 'Ops Support':'D', 'Ops Support / PIM Lead Admin':'D',
+  'PMO & Finance':'SP', 'PMO Ops Lead':'PMO-OL', 'PMO Specialist':'PMO-S',
+  'Product Area Manager':'PAM', 'Product Manager':'PM', 'Product Owner':'PO',
+  'Program Manager':'PO',
+  'Release Train Engineer':'RTE', 'RTE':'RTE', 'RTE2':'SM',
+  'Scrum Master':'SM', 'Scrum master':'SM',
+  'Service Manager':'PMO-OL', 'Service Practioner':'SP', 'Service Practitioner':'SP',
+  'Solution Architect':'SA', 'Sub-PO':'D',
+  'Team Lead':'TL', 'Tech Arch':'TA',
+  'Technical Architect':'TA', 'Technical Architect Lead':'TAL',
+  'Technical Security Manager':'TSM',
+  'User Experience':'DS',
+};
+
+const ALL_MEMBERS_ORIG = [
+  {eid:"queenie.c.so",n:"Queenie C. SO.",team:"PSSM",role:"Product Area Manager",country:"Philippines",cl:"6 - Senior Manager"},
+  {eid:"delf.scheel",n:"Delf Scheel",team:"Enablement Services",role:"Product Area Manager",country:"Germany",cl:"6 - Senior Manager"},
+  {eid:"abby.h.villanueva",n:"Abby H. Villanueva",team:"Enablement Services/Automation_GenAI",role:"Tech Arch",country:"Philippines",cl:"10 - Analyst"},
+  {eid:"dona.joy.soliman",n:"Dona Joy Soliman",team:"Enablement Services/Automation_GenAI",role:"Scrum Master",country:"Philippines",cl:"10 - Analyst"},
+  {eid:"florentino.riana",n:"Florentino Riana",team:"Enablement Services/Automation_GenAI",role:"Sub-PO",country:"Philippines",cl:"9 - Consultant"},
+  {eid:"naveen.s.setty",n:"Naveen S. Setty",team:"PSSM/AI Accelerated PSSM",role:"Solution Architect",country:"India",cl:"7 - Manager"},
+  {eid:"akshi.bhatia",n:"Akshi Bhatia",team:"PSSM/CyberArk Secrets Hub",role:"Solution Architect",country:"United States of America",cl:"7 - Manager"},
+  {eid:"j.l.pangatungan",n:"J. L. Pangatungan",team:"Enablement Services/Automation_GenAI",role:"Product Owner",country:"Philippines",cl:"9 - Consultant"},
+  {eid:"patrick.r.mendiola",n:"Patrick R. Mendiola",team:"PSSM/AI Accelerated PSSM",role:"Program Manager",country:"Philippines",cl:"7 - Manager"},
+  {eid:"darius.lacerna",n:"Darius Lacerna",team:"Enablement Services/Automation_GenAI/KTLO Enhancement",role:"Developer",country:"Philippines",cl:"10 - Analyst"},
+  {eid:"federico.becker",n:"Federico Becker",team:"WARC",role:"Product Area Manager",country:"Argentina",cl:"7 - Manager"},
+  {eid:"christian.g.gonzalez",n:"Christian G. Gonzalez",team:"PSSM/CyberArk Secrets Hub",role:"Program Manager",country:"Philippines",cl:"7 - Manager"},
+  {eid:"gabriel.montanez.jr",n:"Gabriel Montanez JR.",team:"PSSM/AI Accelerated PSSM",role:"Tech Arch",country:"Philippines",cl:"9 - Consultant"},
+  {eid:"naveen.s.setty",n:"Naveen S. Setty",team:"PSSM/CyberArk Secrets Hub",role:"Solution Architect",country:"India",cl:"7 - Manager"},
+  {eid:"michael.a.m.wong",n:"Michael A. M. Wong",team:"PSSM/CyberArk Secrets Hub",role:"Tech Arch",country:"Philippines",cl:"8 - Consultant"},
+  {eid:"ali.mimbisa",n:"Ali Mimbisa",team:"Enablement Services/Automation_GenAI/KTLO Enhancement",role:"Developer",country:"Philippines",cl:"11 - Analyst"},
+  {eid:"kristel.aline.ocampo",n:"Kristel Aline Ocampo",team:"PSSM/CyberArk Secrets Hub",role:"Scrum Master",country:"Philippines",cl:"10 - Analyst"},
+  {eid:"jacoby.m.herbolario",n:"Jacoby M. Herbolario",team:"PSSM KTLO Core",role:"Product Owner",country:"Philippines",cl:"7 - Manager"},
+  {eid:"a.matias",n:"A. Matias",team:"PSSM/AI Accelerated PSSM",role:"Scrum Master",country:"Philippines",cl:"10 - Analyst"},
+  {eid:"naveen.s.setty",n:"Naveen S. Setty",team:"PSSM KTLO Core",role:"Solution Architect",country:"India",cl:"7 - Manager"},
+  {eid:"jessa.matutina",n:"Jessa Matutina",team:"PSSM/CyberArk Secrets Hub/CIONow/ISD Dashboarding",role:"Data Analyst",country:"Philippines",cl:"9 - Consultant"},
+  {eid:"ronald.j.woody",n:"Ronald J. Woody",team:"WARC/AAM_PIM_CIEM",role:"Product Owner",country:"United States of America",cl:"7 - Manager"},
+  {eid:"c.x.herrera",n:"C. X. Herrera",team:"PAM",role:"Product Manager",country:"United States of America",cl:"6 - Senior Manager"},
+  {eid:"gabriel.montanez.jr",n:"Gabriel Montanez JR.",team:"PSSM KTLO Core",role:"Tech Arch",country:"Philippines",cl:"9 - Consultant"},
+  {eid:"bobby.trinidad",n:"Bobby Trinidad",team:"PSSM/CyberArk Secrets Hub/Core Program",role:"Lead Engineer",country:"Philippines",cl:"9 - Consultant"},
+  {eid:"jeremias.d.santiago",n:"Jeremias D. Santiago",team:"PSSM KTLO Core",role:"Tech Arch",country:"Philippines",cl:"8 - Consultant"},
+  {eid:"pablo.g.cruz",n:"Pablo G. Cruz",team:"PSSM KTLO Core",role:"Scrum master",country:"Philippines",cl:"10 - Analyst"},
+  {eid:"sarah.g.salihuddin",n:"Sarah G. Salihuddin",team:"Enablement Services/Data Analytics Enablement",role:"Product Owner",country:"Philippines",cl:"7 - Manager"},
+  {eid:"ma.medesa.r.alcontin",n:"MA. Medesa R. Alcontin",team:"PSSM/CyberArk Secrets Hub/Core Program",role:"Product Owner",country:"Philippines",cl:"9 - Consultant"},
+  {eid:"jordan.porter",n:"Jordan Porter",team:"WARC/AAM_PIM_CIEM",role:"Scrum Master",country:"United States of America",cl:"7 - Manager"},
+  {eid:"antoinette.l.felipe",n:"Antoinette L. Felipe",team:"PSSM/CyberArk Secrets Hub/ESP (Scrum 2)",role:"Lead Developer",country:"Philippines",cl:"11 - Analyst"},
+  {eid:"reymart.fernandez",n:"Reymart Fernandez",team:"PSSM KTLO Core/Application Integration",role:"Product Owner",country:"Philippines",cl:"9 - Consultant"},
+  {eid:"camillia.figueroa",n:"Camillia Figueroa",team:"PSSM KTLO Core/Application Integration/DevCell 1",role:"Developer",country:"Philippines",cl:"12 - Associate"},
+  {eid:"archer.j.medrano",n:"Archer J. Medrano",team:"Enablement Services/Automation_GenAI/KTLO Enhancement",role:"Developer",country:"Philippines",cl:"12 - Associate"},
+  {eid:"hector.nino.n.alivio",n:"Hector Nino N. Alivio",team:"WARC/AAM_PIM_CIEM/Application Integration",role:"Tech Arch",country:"Philippines",cl:"10 - Analyst"},
+  {eid:"edlyn.joyce.hijastro",n:"Edlyn Joyce Hijastro",team:"PSSM/CyberArk Secrets Hub/ESP (Scrum 2)",role:"Developer",country:"Philippines",cl:"12 - Associate"},
+  {eid:"jeanne.krista.l.cruz",n:"Jeanne Krista L. Cruz",team:"WARC/AAM_PIM_CIEM/Application Integration",role:"Tech Arch",country:"Philippines",cl:"9 - Consultant"},
+  {eid:"jessa.matutina",n:"Jessa Matutina",team:"PSSM/AI Accelerated PSSM/CIONow/ISD Dashboarding",role:"Data Analyst",country:"Philippines",cl:"9 - Consultant"},
+  {eid:"florentino.riana",n:"Florentino Riana",team:"Enablement Services/Automation_GenAI/KTLO Enhancement",role:"Lead Developer",country:"Philippines",cl:"9 - Consultant"},
+  {eid:"carla.nicole.martija",n:"Carla Nicole Martija",team:"PSSM KTLO Core/Application Integration/DevCell 1",role:"Developer",country:"Philippines",cl:"11 - Analyst"},
+  {eid:"anthony.b.alden",n:"Anthony B. Alden",team:"PSSM/AI Accelerated PSSM/Core Program",role:"Engineering",country:"Philippines",cl:"9 - Consultant"},
+  {eid:"joshua.almario",n:"Joshua Almario",team:"Enablement Services/Automation_GenAI/KTLO Enhancement",role:"Developer",country:"Philippines",cl:"9 - Consultant"},
+  {eid:"abby.h.villanueva",n:"Abby H. Villanueva",team:"Enablement Services/Data Analytics Enablement/Data Analytics",role:"Tech Arch",country:"Philippines",cl:"10 - Analyst"},
+  {eid:"jayson.dorigo",n:"Jayson Dorigo",team:"PSSM/CyberArk Secrets Hub/ESP (Scrum 2)",role:"Developer",country:"Philippines",cl:"10 - Analyst"},
+  {eid:"charlotte.sison",n:"Charlotte Sison",team:"PSSM KTLO Core/Application Integration/DevCell 1",role:"Lead Developer",country:"Philippines",cl:"11 - Analyst"},
+  {eid:"pablo.g.cruz",n:"Pablo G. Cruz",team:"PSSM KTLO Core/Application Integration/DevCell 1",role:"Scrum master",country:"Philippines",cl:"10 - Analyst"},
+  {eid:"dann.paulo.javierto",n:"Dann Paulo Javierto",team:"Enablement Services/Data Analytics Enablement/Data Analytics",role:"Developer",country:"Philippines",cl:"11 - Analyst"},
+  {eid:"john.wilbert.n.lim",n:"John Wilbert N. Lim",team:"WARC/AAM_PIM_CIEM/Application Integration",role:"Lead Developer",country:"Philippines",cl:"9 - Consultant"},
+  {eid:"dona.joy.soliman",n:"Dona Joy Soliman",team:"Enablement Services/Data Analytics Enablement/Data Analytics",role:"Scrum Master",country:"Philippines",cl:"10 - Analyst"},
+  {eid:"ivan.c.pangilinan",n:"Ivan C. Pangilinan",team:"Enablement Services/Data Analytics Enablement/Data Analytics",role:"Developer",country:"Philippines",cl:"10 - Analyst"},
+  {eid:"jonathan.non",n:"Jonathan Non",team:"Enablement Services/Data Analytics Enablement/Data Analytics",role:"Developer",country:"Philippines",cl:"11 - Analyst"},
+  {eid:"karthik.r.raju",n:"Karthik R. Raju",team:"PSSM/AI Accelerated PSSM/Core Program",role:"Engineering",country:"India",cl:"9 - Consultant"},
+  {eid:"patrick.j.magcalas",n:"Patrick J. Magcalas",team:"PSSM KTLO Core/Application Integration/DevCell 1",role:"Developer",country:"Philippines",cl:"12 - Associate"},
+  {eid:"raphael.j.n.esconde",n:"Raphael J. N. Esconde",team:"WARC/AAM_PIM_CIEM/Application Integration",role:"Developer",country:"Philippines",cl:"10 - Analyst"},
+  {eid:"x.s.penaranda",n:"X. S. Penaranda",team:"PSSM/AI Accelerated PSSM/Core Program",role:"Engineering",country:"Philippines",cl:"10 - Analyst"},
+  {eid:"thippeswamy.b.s",n:"Thippeswamy B. S.",team:"WARC/AAM_PIM_CIEM/Application Integration",role:"Team Lead",country:"India",cl:"8 - Consultant"},
+  {eid:"wesley.r.kittrell",n:"Wesley R. Kittrell",team:"WARC/AAM_PIM_CIEM/Application Integration",role:"Technical Security Manager",country:"United States of America",cl:"7 - Manager"},
+  {eid:"somer.grace.torralba",n:"Somer Grace Torralba",team:"Enablement Services/Data Analytics Enablement/Data Analytics",role:"Developer",country:"Philippines",cl:"9 - Consultant"},
+  {eid:"stephanie.m.almazan",n:"Stephanie M. Almazan",team:"Enablement Services/Data Analytics Enablement/Data Analytics",role:"Lead Developer",country:"Philippines",cl:"9 - Consultant"},
+  {eid:"jessa.matutina",n:"Jessa Matutina",team:"Enablement Services/Data Analytics Enablement/Ops_S&C Enablement",role:"Data Analyst",country:"Philippines",cl:"9 - Consultant"},
+  {eid:"meriam.b.patigayon",n:"Meriam B. Patigayon",team:"Enablement Services/Data Analytics Enablement/Ops_S&C Enablement",role:"Business Analyst",country:"Philippines",cl:"10 - Analyst"},
+  {eid:"jan.marphi.pascual",n:"Jan Marphi Pascual",team:"PSSM KTLO Core/Application Integration/DevCell 2",role:"Developer",country:"Philippines",cl:"12 - Associate"},
+  {eid:"dean.c.calera",n:"Dean C. Calera",team:"PSSM/AI Accelerated PSSM/Plugin AI (Scrum 1)",role:"Lead Developer",country:"Philippines",cl:"9 - Consultant"},
+  {eid:"deniel.ryan.sugay",n:"Deniel Ryan Sugay",team:"PSSM KTLO Core/Application Integration/DevCell 2",role:"Developer",country:"Philippines",cl:"12 - Associate"},
+  {eid:"jayson.dorigo",n:"Jayson Dorigo",team:"PSSM/CyberArk Secrets Hub/ESP (Scrum 2)",role:"Developer",country:"Philippines",cl:"10 - Analyst"},
+  {eid:"enrico.endozo",n:"Enrico Endozo",team:"PSSM KTLO Core/Application Integration/DevCell 2",role:"Lead Developer",country:"Philippines",cl:"10 - Analyst"},
+  {eid:"angie.pontanilla",n:"Angie Pontanilla",team:"PSSM/CyberArk Secrets Hub/ESP+CAPP (Scrum 3)",role:"Lead Developer",country:"Philippines",cl:"10 - Analyst"},
+  {eid:"airez.mogol",n:"Airez Mogol",team:"WARC/AAM_PIM_CIEM/Core Operations",role:"Ops Support",country:"Philippines",cl:"12 - Associate"},
+  {eid:"jecille.villanueva",n:"Jecille Villanueva",team:"PSSM KTLO Core/Application Integration/DevCell 2",role:"Developer",country:"Philippines",cl:"12 - Associate"},
+  {eid:"jan.irene.catibog",n:"Jan Irene Catibog",team:"PSSM/CyberArk Secrets Hub/ESP+CAPP (Scrum 3)",role:"Developer",country:"Philippines",cl:"11 - Analyst"},
+  {eid:"jim.philip.rivadelo",n:"Jim Philip Rivadelo",team:"PSSM/CyberArk Secrets Hub/ESP+CAPP (Scrum 3)",role:"Developer",country:"Philippines",cl:"12 - Associate"},
+  {eid:"lisa.marie.toledo",n:"Lisa Marie Toledo",team:"PSSM/CyberArk Secrets Hub/ESP+CAPP (Scrum 3)",role:"Developer/Ops Support",country:"United States of America",cl:"10 - Analyst"},
+  {eid:"clarence.c.ricafort",n:"Clarence C. Ricafort",team:"PSSM/CyberArk Secrets Hub/Qualys + DAST + WIF (Scrum 1)",role:"Lead Developer",country:"Philippines",cl:"10 - Analyst"},
+  {eid:"john.l.e.minoza",n:"John L. E. Minoza",team:"PSSM/AI Accelerated PSSM/Plugin AI (Scrum 1)",role:"Developer",country:"Philippines",cl:"10 - Analyst"},
+  {eid:"jeminah.rose.d.lajom",n:"Jeminah Rose D. Lajom",team:"PSSM/CyberArk Secrets Hub/Qualys + DAST + WIF (Scrum 1)",role:"Developer",country:"Philippines",cl:"11 - Analyst"},
+  {eid:"anthony.b.alden",n:"Anthony B. Alden",team:"PSSM KTLO Core/Core Operations",role:"Engineering",country:"Philippines",cl:"9 - Consultant"},
+  {eid:"maria.kathleen.ramos",n:"Maria Kathleen Ramos",team:"PSSM/AI Accelerated PSSM/Plugin AI (Scrum 1)",role:"Developer",country:"Philippines",cl:"11 - Analyst"},
+  {eid:"hector.nino.n.alivio",n:"Hector Nino N. Alivio",team:"WARC/AAM_PIM_CIEM/Core Operations",role:"Tech Arch",country:"Philippines",cl:"10 - Analyst"},
+  {eid:"ashley.j.aurellano",n:"Ashley J. Aurellano",team:"PSSM KTLO Core/Core Operations",role:"Ops Support",country:"Philippines",cl:"12 - Associate"},
+  {eid:"svitlana.safrankova",n:"Svitlana Safrankova",team:"Enablement Services/Operations Enablement",role:"Service Manager",country:"Czech Republic",cl:"8 - Consultant"},
+  {eid:"jordan.porter",n:"Jordan Porter",team:"WARC/AAM_PIM_CIEM/Core Operations",role:"Scrum Master",country:"United States of America",cl:"7 - Manager"},
+  {eid:"lenie.m.villabeto",n:"Lenie M. Villabeto",team:"WARC/AAM_PIM_CIEM/Core Operations",role:"Ops Support",country:"Philippines",cl:"12 - Associate"},
+  {eid:"lovely.rose.tuazon",n:"Lovely Rose Tuazon",team:"WARC/AAM_PIM_CIEM/Core Operations",role:"Ops Support",country:"Philippines",cl:"10 - Analyst"},
+  {eid:"ana.l.garcia",n:"Ana L. Garcia",team:"Enablement Services/Operations Enablement/AGILE Coordination",role:"RTE2",country:"Argentina",cl:"9 - Consultant"},
+  {eid:"bernard.j.pabustan",n:"Bernard J. Pabustan",team:"PSSM KTLO Core/Core Operations",role:"Ops Support",country:"Philippines",cl:"11 - Analyst"},
+  {eid:"cyril.paynor",n:"Cyril Paynor",team:"PSSM KTLO Core/Core Operations",role:"Engineering",country:"Philippines",cl:"10 - Analyst"},
+  {eid:"mark.roy.acebuche",n:"Mark Roy Acebuche",team:"PSSM/AI Accelerated PSSM/Plugin AI (Scrum 1)",role:"Developer",country:"Philippines",cl:"11 - Analyst"},
+  {eid:"mikhail.a.mercado",n:"Mikhail A. Mercado",team:"PSSM/AI Accelerated PSSM/Plugin AI (Scrum 1)",role:"Developer",country:"Philippines",cl:"10 - Analyst"},
+  {eid:"ramil.v.franco",n:"Ramil V. Franco",team:"PSSM/AI Accelerated PSSM/Plugin AI (Scrum 1)",role:"Product Owner",country:"Philippines",cl:"8 - Consultant"},
+  {eid:"allisa.may.balatibat",n:"Allisa May Balatibat",team:"PSSM/AI Accelerated PSSM/Plugin AI (Scrum 2)",role:"Developer",country:"Philippines",cl:"12 - Associate"},
+  {eid:"jennelyn.adolfo",n:"Jennelyn Adolfo",team:"PSSM/CyberArk Secrets Hub/Qualys + DAST + WIF (Scrum 1)",role:"Developer",country:"Philippines",cl:"12 - Associate"},
+  {eid:"nino.christian.ruizo",n:"Nino Christian Ruizo",team:"WARC/AAM_PIM_CIEM/Core Operations",role:"Ops Support",country:"Philippines",cl:"11 - Analyst"},
+  {eid:"jerald.jay.torres",n:"Jerald Jay Torres",team:"PSSM/CyberArk Secrets Hub/Qualys + DAST + WIF (Scrum 1)",role:"Developer",country:"Philippines",cl:"12 - Associate"},
+  {eid:"cyrus.r.m.ramos",n:"Cyrus R. M. Ramos",team:"PSSM KTLO Core/Core Operations",role:"Ops Support",country:"Philippines",cl:"11 - Analyst"},
+  {eid:"thippeswamy.b.s",n:"Thippeswamy B. S.",team:"WARC/AAM_PIM_CIEM/Core Operations",role:"Ops Lead",country:"India",cl:"8 - Consultant"},
+  {eid:"ali.mimbisa",n:"Ali Mimbisa",team:"PSSM/CyberArk Secrets Hub/WIF/Decom Hashi (Scrum 4)",role:"Developer",country:"Philippines",cl:"11 - Analyst"},
+  {eid:"erika.mae.g.gascon",n:"Erika Mae G. Gascon",team:"PSSM KTLO Core/Core Operations",role:"Ops Support",country:"Philippines",cl:"10 - Analyst"},
+  {eid:"jamica.era.gasga",n:"Jamica Era Gasga",team:"PSSM KTLO Core/Core Operations",role:"Ops Support",country:"Philippines",cl:"12 - Associate"},
+  {eid:"billy.joe.salapare",n:"Billy Joe Salapare",team:"PSSM/AI Accelerated PSSM/Plugin AI (Scrum 2)",role:"Developer",country:"Philippines",cl:"11 - Analyst"},
+  {eid:"hanicah.m.manguerra",n:"Hanicah M. Manguerra",team:"PSSM/AI Accelerated PSSM/Plugin AI (Scrum 2)",role:"Developer",country:"Philippines",cl:"12 - Associate"},
+  {eid:"jobelle.villareal",n:"Jobelle Villareal",team:"PSSM KTLO Core/Core Operations",role:"Product Owner",country:"Philippines",cl:"8 - Consultant"},
+  {eid:"kathrina.macaraeg",n:"Kathrina Macaraeg",team:"PSSM/AI Accelerated PSSM/Plugin AI (Scrum 2)",role:"Product Owner",country:"Philippines",cl:"8 - Consultant"},
+  {eid:"eurika.s.l.fajutag",n:"Eurika S. L. Fajutag",team:"Enablement Services/Operations Enablement/AGILE Coordination",role:"RTE",country:"Philippines",cl:"8 - Consultant"},
+  {eid:"joanna.liza.abdon",n:"Joanna Liza Abdon",team:"Enablement Services/Operations Enablement/Collaterals Mgmt",role:"Collaterals Mgmt",country:"Philippines",cl:"10 - Analyst"},
+  {eid:"arthur.valerio",n:"Arthur Valerio",team:"PSSM/CyberArk Secrets Hub/WIF/Decom Hashi (Scrum 4)",role:"Ops Support",country:"Philippines",cl:"10 - Analyst"},
+  {eid:"jomari.l.padillo",n:"Jomari L. Padillo",team:"PSSM KTLO Core/Core Operations",role:"Ops Support",country:"Philippines",cl:"11 - Analyst"},
+  {eid:"wesley.r.kittrell",n:"Wesley R. Kittrell",team:"WARC/AAM_PIM_CIEM_PIM_CIEM/Core Operations",role:"Technical Security Manager",country:"United States of America",cl:"7 - Manager"},
+  {eid:"ryan.a.bach",n:"Ryan A. Bach",team:"WARC/PAW",role:"Product Owner",country:"United States of America",cl:"8 - Consultant"},
+  {eid:"mary.j.santiago",n:"Mary J. Santiago",team:"PSSM/AI Accelerated PSSM/Plugin AI (Scrum 2)",role:"Developer",country:"Philippines",cl:"11 - Analyst"},
+  {eid:"rafael.gabriel.sare",n:"Rafael Gabriel Sare",team:"PSSM/AI Accelerated PSSM/Plugin AI (Scrum 2)",role:"Developer",country:"Philippines",cl:"12 - Associate"},
+  {eid:"carl.gene.macaspac",n:"Carl Gene Macaspac",team:"PSSM/CyberArk Secrets Hub/WIF/Decom Hashi (Scrum 4)",role:"Developer",country:"Philippines",cl:"11 - Analyst"},
+  {eid:"joshua.mark.gelacio",n:"Joshua Mark Gelacio",team:"PSSM KTLO Core/Core Operations",role:"Ops Support",country:"Philippines",cl:"11 - Analyst"},
+  {eid:"bhaskar.toutu",n:"Bhaskar Toutu",team:"WARC/PAW/Core Operations",role:"Developer",country:"India",cl:"9 - Consultant"},
+  {eid:"prashant.sherkar",n:"Prashant Sherkar",team:"WARC/PAW/Core Operations",role:"Developer",country:"India",cl:"10 - Analyst"},
+  {eid:"sandeep.adhikari",n:"Sandeep Adhikari",team:"WARC/PAW/Core Operations",role:"Developer",country:"India",cl:"8 - Consultant"},
+  {eid:"karthik.r.raju",n:"Karthik R. Raju",team:"PSSM KTLO Core/Core Operations",role:"Engineering",country:"India",cl:"9 - Consultant"},
+  {eid:"lisa.marie.toledo",n:"Lisa Marie Toledo",team:"PSSM KTLO Core/Core Operations",role:"Ops Support",country:"United States of America",cl:"10 - Analyst"},
+  {eid:"ma.sofia.m.serafico",n:"MA. Sofia M. Serafico",team:"PSSM KTLO Core/Core Operations",role:"Ops Support",country:"Philippines",cl:"10 - Analyst"},
+  {eid:"manikanta.mn",n:"Manikanta MN.",team:"PSSM KTLO Core/Core Operations",role:"Ops Support",country:"India",cl:"10 - Analyst"},
+  {eid:"mary.ann.ranola",n:"Mary Ann Ranola",team:"PSSM KTLO Core/Core Operations",role:"Ops Support",country:"Philippines",cl:"12 - Associate"},
+  {eid:"bai.amor.binasing",n:"Bai Amor Binasing",team:"PSSM/AI Accelerated PSSM/ProdRelease (Scrum 3)",role:"Developer",country:"Philippines",cl:"12 - Associate"},
+  {eid:"ana.l.garcia",n:"Ana L. Garcia",team:"WARC/PAW/Core Operations",role:"Scrum Master",country:"Argentina",cl:"9 - Consultant"},
+  {eid:"michelle.mista",n:"Michelle Mista",team:"PSSM KTLO Core/Core Operations",role:"Engineering",country:"Philippines",cl:"9 - Consultant"},
+  {eid:"denize.vargas",n:"Denize Vargas",team:"PSSM/AI Accelerated PSSM/ProdRelease (Scrum 3)",role:"Developer",country:"Philippines",cl:"10 - Analyst"},
+  {eid:"james.r.rociales",n:"James R. Rociales",team:"PSSM/AI Accelerated PSSM/ProdRelease (Scrum 3)",role:"Developer",country:"Philippines",cl:"10 - Analyst"},
+  {eid:"darryl.john.g.reyes",n:"Darryl John G. Reyes",team:"PSSM/CyberArk Secrets Hub/WIF/Decom Hashi (Scrum 4)",role:"Developer",country:"Philippines",cl:"10 - Analyst"},
+  {eid:"brunda.a.subramani",n:"Brunda A. Subramani",team:"WARC/PAW/Core Operations",role:"Developer",country:"India",cl:"10 - Analyst"},
+  {eid:"pablo.g.cruz",n:"Pablo G. Cruz",team:"PSSM KTLO Core/Core Operations",role:"Scrum master",country:"Philippines",cl:"10 - Analyst"},
+  {eid:"kathrina.macaraeg",n:"Kathrina Macaraeg",team:"PSSM/AI Accelerated PSSM/ProdRelease (Scrum 3)",role:"Product Owner",country:"Philippines",cl:"8 - Consultant"},
+  {eid:"romina.espindola",n:"Romina Espindola",team:"PSSM KTLO Core/Core Operations",role:"Engineering",country:"Argentina",cl:"9 - Consultant"},
+  {eid:"christopher.j.redner",n:"Christopher J. Redner",team:"WARC/PAW/Core Operations",role:"Tech Arch",country:"United States of America",cl:"9 - Consultant"},
+  {eid:"nino.enrico.banzon",n:"Nino Enrico Banzon",team:"WARC/PAW/Core Operations",role:"Developer",country:"Philippines",cl:"10 - Analyst"},
+  {eid:"santiago.c.rodriguez",n:"Santiago C. Rodriguez",team:"WARC/PAW/Core Operations",role:"Developer",country:"Argentina",cl:"10 - Analyst"},
+  {eid:"shaik.a.sameer",n:"Shaik A. Sameer",team:"WARC/PAW/Core Operations",role:"Developer",country:"India",cl:"10 - Analyst"},
+  {eid:"santiago.joel.guzman",n:"Santiago Joel Guzman",team:"PSSM KTLO Core/Core Operations",role:"Ops Support",country:"Argentina",cl:"10 - Analyst"},
+  {eid:"agustin.gamero",n:"Agustin Gamero",team:"Enablement Services/Operations Enablement/PMO & Finance",role:"PMO & Finance",country:"Argentina",cl:"9 - Consultant"},
+  {eid:"miguel.german.koch",n:"Miguel German Koch",team:"WARC/PAW/Tier 0 Core Operations​",role:"Ops Support / PIM Lead Admin",country:"Argentina",cl:"8 - Consultant"},
+  {eid:"sarah.k.wodarczyk",n:"Sarah K. Wodarczyk",team:"WARC/PAW/Tier 0 Core Operations​",role:"Lead Developer",country:"United States of America",cl:"9 - Consultant"},
+  {eid:"shubhra.c.jain",n:"Shubhra C. Jain",team:"WARC/Secure Administrative Access Management (Tier 0)",role:"Program Manager",country:"United States of America",cl:"7 - Manager"},
+  {eid:"jordan.porter",n:"Jordan Porter",team:"WARC/Secure Administrative Access Management (Tier 0)",role:"Scrum Master",country:"United States of America",cl:"7 - Manager"},
+  {eid:"ines.de.ferrari",n:"Ines DE. Ferrari",team:"Enablement Services/Operations Enablement/PMO & Finance",role:"PMO & Finance",country:"Argentina",cl:"12 - Associate"},
+  {eid:"meriam.b.patigayon",n:"Meriam B. Patigayon",team:"Enablement Services/Operations Enablement/ServiceNow Transformation",role:"Business Analyst",country:"Philippines",cl:"10 - Analyst"},
+  {eid:"joanna.liza.abdon",n:"Joanna Liza Abdon",team:"Enablement Services/Operations Enablement/User Experience",role:"User Experience",country:"Philippines",cl:"10 - Analyst"},
+  {eid:"peter.wais",n:"Peter Wais",team:"WARC/Secure Administrative Access Management (Tier 0)",role:"Tech Arch",country:"United States of America",cl:"7 - Manager"},
+  {eid:"ryan.a.bach",n:"Ryan A. Bach",team:"WARC/Secure Administrative Access Management (Tier 0)",role:"Tech Arch",country:"United States of America",cl:"8 - Consultant"},
+  {eid:"darshini.br",n:"Darshini BR.",team:"WARC/Secure Administrative Access Management (Tier 0)/SAAM",role:"Business Analyst",country:"India",cl:"8 - Consultant"},
+  {eid:"gwyneth.manuel",n:"Gwyneth Manuel",team:"WARC/Secure Administrative Access Management (Tier 0)/SAAM",role:"Developer",country:"Philippines",cl:"12 - Associate"},
+  {eid:"miguel.german.koch",n:"Miguel German Koch",team:"WARC/Secure Administrative Access Management (Tier 0)/SAAM",role:"Ops Support",country:"Argentina",cl:"8 - Consultant"},
+  {eid:"marella.f.del.mundo",n:"Marella F. Del Mundo",team:"PSSM/AI Accelerated PSSM/ProdRelease (Scrum 3)",role:"Developer",country:"Philippines",cl:"12 - Associate"},
+  {eid:"yvonne.grace.marzan",n:"Yvonne Grace Marzan",team:"PSSM KTLO Core/Core Operations",role:"Ops Support",country:"Philippines",cl:"12 - Associate"},
+  {eid:"ranjie.anthony.yu",n:"Ranjie Anthony YU.",team:"PSSM/CyberArk Secrets Hub/WIF/Decom Hashi (Scrum 4)",role:"Lead Developer",country:"Philippines",cl:"12 - Associate"},
+  {eid:"rochella.m.alcaide",n:"Rochella M. Alcaide",team:"PSSM/AI Accelerated PSSM/ProdRelease (Scrum 3)",role:"Lead Developer",country:"Philippines",cl:"9 - Consultant"},
+  {eid:"ny.west",n:"NY. West",team:"WARC/Secure Administrative Access Management (Tier 0)/SAAM",role:"Business Analyst",country:"United States of America",cl:"9 - Consultant"},
+  {eid:"sarah.k.wodarczyk",n:"Sarah K. Wodarczyk",team:"WARC/Secure Administrative Access Management (Tier 0)/SAAM",role:"Business Analyst",country:"United States of America",cl:"9 - Consultant"},
+  {eid:"wesley.r.kittrell",n:"Wesley R. Kittrell",team:"WARC/Secure Administrative Access Management (Tier 0)/SAAM",role:"Technical Security Manager",country:"United States of America",cl:"7 - Manager"},
+  {eid:"michal.galas",n:"Michal Galas",team:"WARC/Secure Administrative Access Management (Tier 0)/SAAM",role:"Business Analyst",country:"United States of America",cl:"7 - Manager"},
+  {eid:"carlos.valvecchia",n:"Carlos Valvecchia",team:"WARC/Secure Administrative Access Management (Tier 0)/SAAM",role:"Business Analyst",country:"Argentina",cl:"8 - Consultant"}
+];
+
+let ALL_MEMBERS = [...ALL_MEMBERS_ORIG];
+
+// ────────────────────────────────────────────────────────────
+// ORG TREE DEFINITION
+// ────────────────────────────────────────────────────────────
+const ORG = {
+  id:"pam", name:"PAM", cls:"node-root", mKeys:["PAM"],
+  children:[
+    { id:"es", name:"Enablement Services", cls:"node-l1-es", mKeys:["Enablement Services"],
+      children:[
+        { id:"es-auto", name:"Automation", cls:"node-l2-es", mKeys:[], children:[
+          { id:"es-auto-genai", name:"GenAI", cls:"node-l3-es", mKeys:["Enablement Services/Automation/GenAI"] }
+        ]},
+        { id:"es-autoGenAI", name:"Automation_GenAI", cls:"node-l2-es", mKeys:["Enablement Services/Automation_GenAI"], children:[
+          { id:"es-autoGenAI-ktlo", name:"KTLO Enhancement", cls:"node-l3-es", mKeys:["Enablement Services/Automation_GenAI/KTLO Enhancement"] }
+        ]},
+        { id:"es-dae", name:"Data Analytics Enablement", cls:"node-l2-es", mKeys:["Enablement Services/Data Analytics Enablement"], children:[
+          { id:"es-dae-da", name:"Data Analytics", cls:"node-l3-es", mKeys:["Enablement Services/Data Analytics Enablement/Data Analytics"] },
+          { id:"es-da-ops", name:"Ops_S&C Enablement", cls:"node-l3-es", mKeys:["Enablement Services/Data Analytics/Ops/S&C Enablement"] }
+        ]},
+        { id:"es-oe", name:"Operations Enablement", cls:"node-l2-es", mKeys:["Enablement Services/Operations Enablement"], children:[
+          { id:"es-oe-agile", name:"AGILE Coordination", cls:"node-l3-es", mKeys:["Enablement Services/Operations Enablement/AGILE Coordination"] },
+          { id:"es-oe-coll", name:"Collaterals Mgmt", cls:"node-l3-es", mKeys:["Enablement Services/Operations Enablement/Collaterals Mgmt"] },
+          { id:"es-oe-pmo", name:"PMO & Finance", cls:"node-l3-es", mKeys:["Enablement Services/Operations Enablement/PMO & Finance"] },
+          { id:"es-oe-sn", name:"ServiceNow Transformation", cls:"node-l3-es", mKeys:["Enablement Services/Operations Enablement/ServiceNow Transformation"] },
+          { id:"es-oe-ux", name:"User Experience", cls:"node-l3-es", mKeys:["Enablement Services/Operations Enablement/User Experience"] }
+        ]}
+      ]
+    },
+    { id:"pssm", name:"PSSM", cls:"node-l1-pssm", mKeys:["PSSM"],
+      children:[
+        { id:"pssm-ktlo", name:"PSSM KTLO Core", cls:"node-l2-pssm", mKeys:["PSSM KTLO Core"], children:[
+          { id:"pssm-ktlo-ai", name:"Application Integration", cls:"node-l2-pssm", mKeys:["PSSM KTLO Core/Application Integration"], children:[
+            { id:"pssm-ktlo-ai-dc1", name:"DevCell 1", cls:"node-l3-pssm", mKeys:["PSSM KTLO Core/Application Integration/DevCell 1"] },
+            { id:"pssm-ktlo-ai-dc2", name:"DevCell 2", cls:"node-l3-pssm", mKeys:["PSSM KTLO Core/Application Integration/DevCell 2"] }
+          ]},
+          { id:"pssm-ktlo-co", name:"Core Operations", cls:"node-l2-pssm", mKeys:["PSSM KTLO Core/Core Operations","PSSM/Core Operations"] }
+        ]},
+        { id:"pssm-ai", name:"AI Accelerated PSSM", cls:"node-l2-pssm", mKeys:["PSSM/AI Accelerated PSSM"], children:[
+          { id:"pssm-ai-cio", name:"CIONow/ISD Dashboarding", cls:"node-l3-pssm", mKeys:["PSSM/AI Accelerated PSSM/CIONow/ISD Dashboarding"] },
+          { id:"pssm-ai-cp", name:"Core Program", cls:"node-l3-pssm", mKeys:["PSSM/AI Accelerated PSSM/Core Program"] },
+          { id:"pssm-ai-s1", name:"Plugin AI (Scrum 1)", cls:"node-l3-pssm", mKeys:["PSSM/AI Accelerated PSSM/Plugin AI (Scrum 1)"] },
+          { id:"pssm-ai-s2", name:"Plugin AI (Scrum 2)", cls:"node-l3-pssm", mKeys:["PSSM/AI Accelerated PSSM/Plugin AI (Scrum 2)"] },
+          { id:"pssm-ai-s3", name:"ProdRelease (Scrum 3)", cls:"node-l3-pssm", mKeys:["PSSM/AI Accelerated PSSM/ProdRelease (Scrum 3)"] }
+        ]},
+        { id:"pssm-csh", name:"CyberArk Secrets Hub", cls:"node-l2-pssm", mKeys:["PSSM/CyberArk Secrets Hub"], children:[
+          { id:"pssm-csh-cio", name:"CIONow/ISD Dashboarding", cls:"node-l3-pssm", mKeys:["PSSM/CyberArk Secrets Hub/CIONow/ISD Dashboarding"] },
+          { id:"pssm-csh-cp", name:"Core Program", cls:"node-l3-pssm", mKeys:["PSSM/CyberArk Secrets Hub/Core Program"] },
+          { id:"pssm-csh-esp2", name:"ESP (Scrum 2)", cls:"node-l3-pssm", mKeys:["PSSM/CyberArk Secrets Hub/ESP (Scrum 2)"] },
+          { id:"pssm-csh-esp3", name:"ESP+CAPP (Scrum 3)", cls:"node-l3-pssm", mKeys:["PSSM/CyberArk Secrets Hub/ESP+CAPP (Scrum 3)"] },
+          { id:"pssm-csh-q1", name:"Qualys+DAST+WIF (Scrum 1)", cls:"node-l3-pssm", mKeys:["PSSM/CyberArk Secrets Hub/Qualys + DAST + WIF (Scrum 1)"] },
+          { id:"pssm-csh-wif", name:"WIF/Decom Hashi (Scrum 4)", cls:"node-l3-pssm", mKeys:["PSSM/CyberArk Secrets Hub/WIF/Decom Hashi (Scrum 4)"] }
+        ]}
+      ]
+    },
+    { id:"warc", name:"WARC", cls:"node-l1-warc", mKeys:["WARC"],
+      children:[
+        { id:"warc-aam", name:"AAM_PIM_CIEM", cls:"node-l2-warc", mKeys:["WARC/AAM_PIM_CIEM"], children:[
+          { id:"warc-aam-ai", name:"Application Integration", cls:"node-l3-warc", mKeys:["WARC/AAM_PIM_CIEM/Application Integration"] },
+          { id:"warc-aam-co", name:"Core Operations", cls:"node-l3-warc", mKeys:["WARC/AAM_PIM_CIEM/Core Operations","WARC/AAM_PIM_CIEM_PIM_CIEM/Core Operations"] }
+        ]},
+        { id:"warc-paw", name:"PAW", cls:"node-l2-warc", mKeys:["WARC/PAW"], children:[
+          { id:"warc-paw-co", name:"Core Operations", cls:"node-l3-warc", mKeys:["WARC/PAW/Core Operations"] },
+          { id:"warc-paw-t0", name:"Tier 0 Core Operations", cls:"node-l3-warc", mKeys:["WARC/PAW/Tier 0 Core Operations​"] }
+        ]},
+        { id:"warc-saam-p", name:"Secure Admin. Access Mgmt (Tier 0)", cls:"node-l2-warc", mKeys:["WARC/Secure Administrative Access Management (Tier 0)"], children:[
+          { id:"warc-saam", name:"SAAM", cls:"node-l3-warc", mKeys:["WARC/Secure Administrative Access Management (Tier 0)/SAAM"] }
+        ]}
+      ]
+    }
+  ]
+};
+
+// ────────────────────────────────────────────────────────────
+// FILTER STATE
+// ────────────────────────────────────────────────────────────
+const F = { cl: new Set(), role: new Set(), country: new Set(), team: new Set(), project: new Set(), member: '' };
+const SHOW = { role: true, location: true, cl: true, fte: true, fteName: false, abbrev: false };
+
+const FLAGS = {
+  "Argentina":"🇦🇷",
+  "Czech Republic":"🇨🇿",
+  "Germany":"🇩🇪",
+  "India":"🇮🇳",
+  "Philippines":"🇵🇭",
+  "United States of America":"🇺🇸",
+  "N/A":"❓"
+};
+
+// ────────────────────────────────────────────────────────────
+// MEMBER HELPERS
+// ────────────────────────────────────────────────────────────
+function nodeDirectMembers(node, pool) {
+  return pool.filter(m => node.mKeys.includes(m.team));
+}
+
+function nodeTotal(node, pool) {
+  const eids = new Set();
+  function collect(n) {
+    nodeDirectMembers(n, pool).forEach(m => eids.add(m.eid));
+    if (n.children) n.children.forEach(c => collect(c));
+  }
+  collect(node);
+  return eids.size;
+}
+
+function filteredPool() {
+  const q = F.member.trim().toLowerCase();
+  return ALL_MEMBERS.filter(m => {
+    if (F.cl.size > 0 && !F.cl.has(m.cl)) return false;
+    if (F.role.size > 0 && !F.role.has(m.role)) return false;
+    if (F.country.size > 0 && !F.country.has(m.country)) return false;
+    if (F.team.size > 0) {
+      const match = [...F.team].some(t =>
+        m.team === t || m.team.startsWith(t+'/') || m.team.startsWith(t+' ')
+      );
+      if (!match) return false;
+    }
+    if (F.project.size > 0) {
+      const entries = FTE_DATA[m.eid] || [];
+      if (!entries.some(f => F.project.has(f.id))) return false;
+    }
+    if (q && !m.n.toLowerCase().includes(q) && !m.eid.toLowerCase().includes(q)) return false;
+    return true;
+  });
+}
+
+function initials(name) {
+  const parts = name.trim().split(/\s+/);
+  const a = parts[0] ? parts[0][0] : '';
+  const b = parts[1] ? parts[1][0] : '';
+  return (a + b).toUpperCase();
+}
+
+// ────────────────────────────────────────────────────────────
+// FILTER UI
+// ────────────────────────────────────────────────────────────
+function showBanner(msg) {
+  const b = document.getElementById('banner');
+  b.textContent = msg;
+  b.style.display = 'block';
+  setTimeout(() => { b.style.display = 'none'; }, 5000);
+}
+
+function buildFilterUI() {
+  const panel = document.getElementById('filtersPanel');
+  panel.innerHTML = '';
+
+  // Chart View: global expand/collapse
+  const cvDiv = document.createElement('div');
+  cvDiv.className = 'filter-group';
+  const cvLabel = document.createElement('label');
+  cvLabel.textContent = 'Chart View';
+  cvDiv.appendChild(cvLabel);
+  const cvRow = document.createElement('div');
+  cvRow.className = 'vis-row';
+  [
+    { label: '⊕ Expand All',   action: () => toggleAllNodes(true) },
+    { label: '⊖ Collapse All', action: () => toggleAllNodes(false) },
+    { label: '&#128101; ⊕ Members', action: () => toggleAllMembers(true) },
+    { label: '&#128101; ⊖ Members', action: () => toggleAllMembers(false) },
+  ].forEach(({ label, action }) => {
+    const btn = document.createElement('button');
+    btn.className = 'vis-toggle';
+    btn.innerHTML = label;
+    btn.addEventListener('click', action);
+    cvRow.appendChild(btn);
+  });
+  cvDiv.appendChild(cvRow);
+  panel.appendChild(cvDiv);
+
+  // Build project list dynamically from FTE_DATA
+  const projectMap = {};
+  Object.values(FTE_DATA).forEach(arr => arr.forEach(p => { if (!projectMap[p.id]) projectMap[p.id] = p.name; }));
+  const projectVals = Object.keys(projectMap).sort();
+
+  const groups = [
+    { key:'cl', label:'Career Level', vals:["6 - Senior Manager","7 - Manager","8 - Consultant","9 - Consultant","10 - Analyst","11 - Analyst","12 - Associate","N/A"] },
+    { key:'country', label:'Country', vals:["Argentina","Czech Republic","Germany","India","Philippines","United States of America","N/A"] },
+    { key:'team', label:'Team (L1)', vals:["Enablement Services","PSSM","WARC"] },
+    { key:'role', label:'Role', vals:[...new Set(ALL_MEMBERS.map(m=>m.role))].sort() },
+    { key:'project', label:'Project ID', vals: projectVals, titles: projectMap }
+  ];
+
+  groups.forEach(g => {
+    const div = document.createElement('div');
+    div.className = 'filter-group';
+    const label = document.createElement('label');
+    label.textContent = g.label;
+    div.appendChild(label);
+    const pillRow = document.createElement('div');
+    pillRow.className = 'pill-row';
+    pillRow.dataset.key = g.key;
+    g.vals.forEach(v => {
+      const pill = document.createElement('button');
+      pill.className = 'filter-pill';
+      pill.textContent = v;
+      pill.dataset.val = v;
+      if (g.titles) pill.title = g.titles[v] || v;
+      if (F[g.key].has(v)) pill.classList.add('active');
+      pill.addEventListener('click', () => toggleFilter(g.key, v, pill));
+      pillRow.appendChild(pill);
+    });
+    div.appendChild(pillRow);
+    panel.appendChild(div);
+  });
+
+  // Visibility toggles
+  const visDiv = document.createElement('div');
+  visDiv.className = 'filter-group';
+  const visLabel = document.createElement('label');
+  visLabel.textContent = 'Show on cards';
+  visDiv.appendChild(visLabel);
+  const visRow = document.createElement('div');
+  visRow.className = 'vis-row';
+  [
+    { key:'role',     label:'Role' },
+    { key:'abbrev',   label:'Acronyms' },
+    { key:'location', label:'Country' },
+    { key:'cl',       label:'Career Level' },
+    { key:'fte',      label:'Project / FTE' },
+    { key:'fteName',  label:'Project Name' },
+  ].forEach(({ key, label }) => {
+    const btn = document.createElement('button');
+    btn.className = 'vis-toggle' + (SHOW[key] ? ' active' : '');
+    btn.textContent = label;
+    btn.dataset.visKey = key;
+    btn.addEventListener('click', () => toggleDisplay(key, btn));
+    visRow.appendChild(btn);
+  });
+  visDiv.appendChild(visRow);
+  panel.appendChild(visDiv);
+
+  // Member search input
+  const searchDiv = document.createElement('div');
+  searchDiv.className = 'filter-group';
+  const searchLabel = document.createElement('label');
+  searchLabel.textContent = 'Member';
+  searchDiv.appendChild(searchLabel);
+  const searchWrap = document.createElement('div');
+  searchWrap.className = 'member-search-wrap';
+  const searchInput = document.createElement('input');
+  searchInput.type = 'text';
+  searchInput.id = 'memberSearch';
+  searchInput.className = 'member-search';
+  searchInput.placeholder = 'Search by name or EID…';
+  searchInput.value = F.member;
+  let searchTimer;
+  searchInput.addEventListener('input', () => {
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(() => {
+      F.member = searchInput.value;
+      applyFilters();
+      updateActiveChips();
+    }, 200);
+  });
+  searchWrap.appendChild(searchInput);
+  searchDiv.appendChild(searchWrap);
+  panel.appendChild(searchDiv);
+
+  const clearBtn = document.createElement('button');
+  clearBtn.className = 'btn-clear';
+  clearBtn.textContent = '✕ Clear';
+  clearBtn.addEventListener('click', clearFilters);
+  panel.appendChild(clearBtn);
+}
+
+function toggleFilter(key, val, pill) {
+  if (F[key].has(val)) {
+    F[key].delete(val);
+    pill.classList.remove('active');
+  } else {
+    F[key].add(val);
+    pill.classList.add('active');
+  }
+  applyFilters();
+  updateActiveChips();
+}
+
+function toggleDisplay(key, btn) {
+  SHOW[key] = !SHOW[key];
+  const tree = document.getElementById('tree');
+  const clsMap = { role:'hide-role', location:'hide-location', cl:'hide-cl', fte:'hide-fte', fteName:'show-fte-name', abbrev:'show-abbrev' };
+  const cls = clsMap[key];
+  if (key === 'fteName' || key === 'abbrev') {
+    tree.classList.toggle(cls, SHOW[key]);
+  } else {
+    tree.classList.toggle(cls, !SHOW[key]);
+  }
+  btn.classList.toggle('active', SHOW[key]);
+}
+
+function clearFilters() {
+  ['cl','role','country','team','project'].forEach(k => F[k].clear());
+  F.member = '';
+  const si = document.getElementById('memberSearch');
+  if (si) si.value = '';
+  document.querySelectorAll('.filter-pill.active').forEach(p => p.classList.remove('active'));
+  applyFilters();
+  updateActiveChips();
+}
+
+function updateActiveChips() {
+  const container = document.getElementById('activeFilters');
+  container.innerHTML = '';
+  ['cl','role','country','team','project'].forEach(key => {
+    F[key].forEach(val => {
+      const chip = document.createElement('div');
+      chip.className = 'filter-chip';
+      const labelMap = {cl:'CL',role:'Role',country:'Country',team:'Team',project:'Project'};
+      chip.innerHTML = `<span>${labelMap[key]}: ${val}</span><span class="chip-x" data-key="${key}" data-val="${val}">✕</span>`;
+      chip.querySelector('.chip-x').addEventListener('click', function() {
+        F[this.dataset.key].delete(this.dataset.val);
+        const pill = document.querySelector(`.filter-pill[data-val="${CSS.escape(this.dataset.val)}"]`);
+        if (pill) pill.classList.remove('active');
+        applyFilters();
+        updateActiveChips();
+      });
+      container.appendChild(chip);
+    });
+  });
+  if (F.member.trim()) {
+    const chip = document.createElement('div');
+    chip.className = 'filter-chip';
+    chip.innerHTML = `<span>Member: ${F.member}</span><span class="chip-x">✕</span>`;
+    chip.querySelector('.chip-x').addEventListener('click', () => {
+      F.member = '';
+      const si = document.getElementById('memberSearch');
+      if (si) si.value = '';
+      applyFilters();
+      updateActiveChips();
+    });
+    container.appendChild(chip);
+  }
+}
+
+function applyFilters() {
+  const pool = filteredPool();
+  updateStats(pool);
+  updateTree(ORG, pool);
+  equalizeNodeHeights();
+}
+
+function equalizeNodeHeights() {
+  requestAnimationFrame(() => {
+    const byLevel = {};
+    document.querySelectorAll('#tree .tree-node[data-level]').forEach(el => {
+      if (el.offsetParent === null) return;
+      const lv = el.dataset.level;
+      if (!byLevel[lv]) byLevel[lv] = [];
+      byLevel[lv].push(el.querySelector(':scope > .node-card'));
+    });
+    Object.values(byLevel).forEach(cards => {
+      cards.forEach(c => { if (c) c.style.minHeight = ''; });
+      const max = Math.max(...cards.map(c => c ? c.offsetHeight : 0));
+      if (max > 0) cards.forEach(c => { if (c) c.style.minHeight = max + 'px'; });
+    });
+  });
+}
+
+function toggleAllNodes(expand) {
+  document.querySelectorAll('#tree .node-header[onclick]').forEach(h => {
+    const id = h.closest('.tree-node').id.replace('node-', '');
+    const conn = document.getElementById('conn-' + id);
+    const icon = h.querySelector('.expand-icon');
+    if (conn) {
+      conn.style.display = expand ? '' : 'none';
+      if (icon) icon.style.transform = expand ? '' : 'rotate(-90deg)';
+    }
+  });
+  equalizeNodeHeights();
+}
+
+function setLevelExpand(level, expand) {
+  document.querySelectorAll(`#tree .tree-node[data-level="${level}"]`).forEach(node => {
+    const id = node.id.replace('node-', '');
+    const conn = document.getElementById('conn-' + id);
+    const icon = node.querySelector(':scope > .node-card > .node-header .expand-icon');
+    if (conn) {
+      conn.style.display = expand ? '' : 'none';
+      if (icon) icon.style.transform = expand ? '' : 'rotate(-90deg)';
+    }
+  });
+  equalizeNodeHeights();
+}
+
+function toggleAllMembers(expand) {
+  document.querySelectorAll('#tree .people-list').forEach(list => {
+    list.style.display = expand ? '' : 'none';
+    const btn = list.previousElementSibling;
+    if (btn && btn.classList.contains('people-toggle')) {
+      btn.querySelector && (btn.innerHTML = btn.innerHTML.replace(/▲|▼|&#9650;|&#9660;/, expand ? '&#9650;' : '&#9660;'));
+    }
+  });
+}
+
+function updateStats(pool) {
+  const shown = new Set(pool.map(m => m.eid)).size;
+  const total = new Set(ALL_MEMBERS.map(m => m.eid)).size;
+  document.getElementById('statsBar').innerHTML =
+    `<span class="dot"></span><span>Showing <strong>${shown}</strong> of <strong>${total}</strong> people</span>`;
+}
+
+// ────────────────────────────────────────────────────────────
+// TREE BUILD & UPDATE
+// ────────────────────────────────────────────────────────────
+function personRowHTML(m) {
+  const flag = FLAGS[m.country] || '❓';
+  const assignCount = ALL_MEMBERS.filter(x => x.eid === m.eid).length;
+  const multiHat = assignCount > 1 ? `<span class="multi-hat" title="${assignCount} assignments">⊕${assignCount}</span>` : '';
+  const fteEntries = FTE_DATA[m.eid] || [];
+  const fteHtml = fteEntries.length
+    ? `<div class="fte-tags">${fteEntries.map(f =>
+        `<span class="fte-badge" title="${f.name}">${f.id}<span class="fte-proj-name"> – ${f.name}</span> · <span class="fte-pct">${Math.round(f.fte * 100)}%</span></span>`
+      ).join('')}</div>`
+    : '';
+  return `<div class="person-row">
+    <div class="avatar">${initials(m.n)}</div>
+    <div class="person-info">
+      <span class="person-name">${m.n}</span>${multiHat}
+      <span class="role-chip"><span class="role-full">${m.role}</span><span class="role-short">${ROLE_ABBREV[m.role] || m.role}</span></span>
+      ${fteHtml}
+    </div>
+    <div class="person-meta">
+      <span class="flag-icon">${flag}</span>
+      <span class="cl-tag">${m.cl}</span>
+    </div>
+  </div>`;
+}
+
+function renderNode(node, level = 0) {
+  if (nodeTotal(node, ALL_MEMBERS) === 0) return '';
+
+  const members = nodeDirectMembers(node, ALL_MEMBERS);
+  const total = nodeTotal(node, ALL_MEMBERS);
+  const activeChildren = (node.children || []).filter(c => nodeTotal(c, ALL_MEMBERS) > 0);
+  const hasChildren = activeChildren.length > 0;
+  const nodeHeaderClick = hasChildren ? `onclick="toggleChildren('${node.id}')"` : '';
+
+  let peopleSectionHTML = '';
+  if (members.length > 0) {
+    peopleSectionHTML = `
+    <div class="people-section">
+      <button class="people-toggle" onclick="togglePeople(event,'${node.id}')">&#128101; ${members.length} member${members.length!==1?'s':''} &#9660;</button>
+      <div class="people-list" id="people-${node.id}" style="display:none">
+        ${members.map(m => personRowHTML(m)).join('')}
+      </div>
+    </div>`;
+  }
+
+  let childrenHTML = '';
+  if (hasChildren) {
+    childrenHTML = `
+    <div class="children-connector" id="conn-${node.id}">
+      <div class="vline"></div>
+      <div class="children-row" id="children-${node.id}">
+        ${activeChildren.map(c => `<div class="child-col">${renderNode(c, level + 1)}</div>`).join('')}
+      </div>
+    </div>`;
+  }
+
+  return `
+  <div class="tree-node" id="node-${node.id}" data-level="${level}">
+    <div class="node-card ${node.cls}">
+      <div class="node-header" ${nodeHeaderClick}>
+        <span class="node-name">${node.name}</span>
+        <span class="count-badge">${total}</span>
+        ${hasChildren ? '<span class="expand-icon">&#9660;</span>' : ''}
+      </div>
+      ${peopleSectionHTML}
+    </div>
+    ${childrenHTML}
+  </div>`;
+}
+
+function buildTree() {
+  const container = document.getElementById('tree');
+  container.innerHTML = renderNode(ORG);
+  applyFilters();
+}
+
+function updateTree(node, pool) {
+  const el = document.getElementById('node-' + node.id);
+  if (!el) return;
+
+  const direct = nodeDirectMembers(node, pool);
+  const total = nodeTotal(node, pool);
+  const grandTotal = nodeTotal(node, ALL_MEMBERS);
+
+  // Hide entire child-col wrapper (or the node itself at root level)
+  const col = el.parentElement;
+  const wrapper = (col && col.classList.contains('child-col')) ? col : el;
+  wrapper.style.display = total === 0 ? 'none' : '';
+
+  if (total > 0) {
+    const badge = el.querySelector(':scope > .node-card > .node-header > .count-badge');
+    if (badge) {
+      badge.textContent = (total === grandTotal) ? String(total) : `${total}/${grandTotal}`;
+    }
+
+    const peopleList = el.querySelector('#people-' + node.id);
+    if (peopleList) {
+      peopleList.innerHTML = direct.map(m => personRowHTML(m)).join('');
+      const toggle = el.querySelector(':scope > .node-card .people-toggle');
+      if (toggle) {
+        if (direct.length > 0) {
+          toggle.style.display = '';
+          toggle.innerHTML = `&#128101; ${direct.length} member${direct.length!==1?'s':''} &#9660;`;
+        } else {
+          toggle.style.display = 'none';
+        }
+      }
+    }
+  }
+
+  if (node.children) node.children.forEach(c => updateTree(c, pool));
+
+  // Hide connector when all children are filtered out
+  const conn = document.getElementById('conn-' + node.id);
+  if (conn) {
+    const childRow = conn.querySelector('.children-row');
+    const anyVisible = childRow && [...childRow.children].some(c => c.style.display !== 'none');
+    conn.style.display = anyVisible ? '' : 'none';
+    const icon = el.querySelector(':scope > .node-card > .node-header > .expand-icon');
+    if (icon) icon.style.display = anyVisible ? '' : 'none';
+  }
+}
+
+// ────────────────────────────────────────────────────────────
+// TOGGLE HANDLERS
+// ────────────────────────────────────────────────────────────
+function toggleChildren(id) {
+  const el = document.getElementById('children-' + id);
+  if (!el) return;
+  const hidden = el.style.display === 'none';
+  el.style.display = hidden ? '' : 'none';
+  const icon = document.querySelector('#node-' + id + ' > .node-card > .node-header > .expand-icon');
+  if (icon) icon.textContent = hidden ? '▼' : '▶';
+}
+
+function togglePeople(evt, id) {
+  evt.stopPropagation();
+  const el = document.getElementById('people-' + id);
+  if (!el) return;
+  const hidden = el.style.display === 'none';
+  el.style.display = hidden ? '' : 'none';
+}
+
+// ────────────────────────────────────────────────────────────
+// PRINT ORG CHART  (graphical, level-by-level)
+// ────────────────────────────────────────────────────────────
+function buildPrintOrgChart(pool) {
+  const today = new Date().toLocaleDateString('en-US', {year:'numeric',month:'long',day:'numeric'});
+
+  // Active filters summary
+  const fp = [];
+  if (F.cl.size)        fp.push('CL: '      + [...F.cl].join(', '));
+  if (F.role.size)      fp.push('Role: '    + [...F.role].join(', '));
+  if (F.country.size)   fp.push('Country: '  + [...F.country].join(', '));
+  if (F.team.size)      fp.push('Team: '     + [...F.team].join(', '));
+  if (F.project.size)   fp.push('Project: '  + [...F.project].join(', '));
+  if (F.member.trim())  fp.push('Member: '   + F.member.trim());
+  const filterText = fp.length ? fp.join(' · ') : 'No filters applied';
+
+  const pamTotal = nodeTotal(ORG, pool);
+  const pamGrand = ALL_MEMBERS.length;
+  const pamStr   = (pamTotal === pamGrand) ? pamTotal : `${pamTotal}/${pamGrand}`;
+
+  // ── PAGE 1: Overview ──────────────────────────────────────
+  const l1Cards = ORG.children.map(l1 => {
+    const t = nodeTotal(l1, pool);
+    const g = nodeTotal(l1, ALL_MEMBERS);
+    const tStr = (t === g) ? t : `${t}/${g}`;
+    const key  = l1.id; // es | pssm | warc
+    const subs = l1.children ? l1.children.length : 0;
+    return `<div class="po-l1-card ${key}">
+      <div class="po-l1-name">${l1.name}</div>
+      <div class="po-l1-count">${tStr}</div>
+      <div class="po-l1-sub">${subs} sub-equipos</div>
+    </div>`;
+  }).join('');
+
+  let html = `
+  <div class="po-page">
+    <div class="po-pg-header">
+      <h2>PAM Organization Chart</h2>
+      <p>Generado el ${today}</p>
+    </div>
+    <div><span class="po-filter-chip">Filters: ${filterText}</span></div>
+    <div class="po-root-wrap">
+      <div class="po-root-box">PAM <span class="po-root-badge">${pamStr} people</span></div>
+    </div>
+    <div class="po-vconn"></div>
+    <div class="po-l1-row">${l1Cards}</div>
+    <div class="po-legend">
+      <div class="po-legend-item"><div class="po-legend-dot" style="background:#0041c2"></div>Enablement Services</div>
+      <div class="po-legend-item"><div class="po-legend-dot" style="background:#1a7a3c"></div>PSSM</div>
+      <div class="po-legend-item"><div class="po-legend-dot" style="background:#c0392b"></div>WARC</div>
+    </div>
+  </div>`;
+
+  // ── PAGES 2–4: One per L1 branch ─────────────────────────
+  ORG.children.forEach(l1 => {
+    const t    = nodeTotal(l1, pool);
+    const g    = nodeTotal(l1, ALL_MEMBERS);
+    const tStr = (t === g) ? `${t} people` : `${t}/${g} people`;
+    const key  = l1.id;
+    const l2Cards = (l1.children || []).map(l2 => renderPrintNode(l2, pool, key)).join('');
+
+    html += `
+    <div class="po-page">
+      <div class="po-pg-header">
+        <h2>${l1.name}</h2>
+        <p>${today}</p>
+      </div>
+      <div class="po-branch-bar ${key}">
+        <h3>${l1.name}</h3>
+        <span>${tStr} · ${(l1.children||[]).length} sub-equipos</span>
+      </div>
+      <div class="po-l2-grid">${l2Cards}</div>
+    </div>`;
+  });
+
+  return html;
+}
+
+function renderPrintNode(node, pool, type) {
+  const total = nodeTotal(node, pool);
+  const grand = nodeTotal(node, ALL_MEMBERS);
+  if (total === 0 && grand === 0) return '';
+  const cntStr  = (total === grand) ? total : `${total}/${grand}`;
+  const direct  = nodeDirectMembers(node, pool);
+
+  const directHtml = direct.map(m =>
+    `<div class="po-person"><span class="po-pname">${m.n}</span><span class="po-prole"> · ${m.role}</span></div>`
+  ).join('');
+
+  const childrenHtml = (node.children || []).map(child => {
+    const ct = nodeTotal(child, pool);
+    const cg = nodeTotal(child, ALL_MEMBERS);
+    if (ct === 0 && cg === 0) return '';
+    const ccStr  = (ct === cg) ? ct : `${ct}/${cg}`;
+    const cdirect = nodeDirectMembers(child, pool);
+
+    // Handle one more level (DevCells etc.)
+    const gcHtml = (child.children || []).map(gc => {
+      const gt2 = nodeTotal(gc, pool);
+      const gg2 = nodeTotal(gc, ALL_MEMBERS);
+      if (gt2 === 0 && gg2 === 0) return '';
+      const gcStr  = (gt2 === gg2) ? gt2 : `${gt2}/${gg2}`;
+      const gcdirect = nodeDirectMembers(gc, pool);
+      return `<div class="po-l4-block">
+        <div class="po-l4-head"><span>↳ ${gc.name}</span><span class="po-cnt">${gcStr}</span></div>
+        ${gcdirect.length ? `<div class="po-l4-people">${gcdirect.map(m=>`<div class="po-person"><span class="po-pname">${m.n}</span><span class="po-prole"> · ${m.role}</span></div>`).join('')}</div>` : ''}
+      </div>`;
+    }).join('');
+
+    return `<div class="po-l3-block">
+      <div class="po-l3-head"><span>${child.name}</span><span class="po-cnt">${ccStr}</span></div>
+      ${cdirect.length ? `<div class="po-l3-people">${cdirect.map(m=>`<div class="po-person"><span class="po-pname">${m.n}</span><span class="po-prole"> · ${m.role}</span></div>`).join('')}</div>` : ''}
+      ${gcHtml}
+    </div>`;
+  }).join('');
+
+  return `
+  <div class="po-l2-card ${type}">
+    <div class="po-l2-head"><span>${node.name}</span><span class="po-cnt">${cntStr}</span></div>
+    ${direct.length ? `<div class="po-people">${directHtml}</div>` : ''}
+    ${childrenHtml}
+  </div>`;
+}
+
+// ────────────────────────────────────────────────────────────
+// BUTTONS
+// ────────────────────────────────────────────────────────────
+document.getElementById('btnPpt').addEventListener('click', exportToPptx);
+
+document.getElementById('btnDownload').addEventListener('click', function() {
+  const blob = new Blob([document.documentElement.outerHTML], { type: 'text/html;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'PAM Org Chart.html';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+});
+
+// ────────────────────────────────────────────────────────────
+// DRAG & DROP EXCEL
+// ────────────────────────────────────────────────────────────
+const dz = document.getElementById('dropZone');
+
+dz.addEventListener('dragover', function(e) {
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'copy';
+  dz.classList.add('drag-over');
+});
+dz.addEventListener('dragleave', function() { dz.classList.remove('drag-over'); });
+dz.addEventListener('drop', function(e) {
+  e.preventDefault();
+  dz.classList.remove('drag-over');
+  const file = e.dataTransfer.files[0];
+  if (!file) return;
+  const ext = file.name.split('.').pop().toLowerCase();
+  if (ext === 'csv') { parseFteCsv(file); return; }
+  if (ext !== 'xlsx' && ext !== 'xls') {
+    alert('Drop an .xlsx/.xls file (roster) or .csv file (FTE forecast)');
+    return;
+  }
+  parseExcel(file);
+});
+
+// Also allow click to select file
+dz.style.cursor = 'pointer';
+dz.addEventListener('click', function() {
+  const inp = document.createElement('input');
+  inp.type = 'file';
+  inp.accept = '.xlsx,.xls,.csv';
+  inp.onchange = function(e) {
+    if (!e.target.files[0]) return;
+    const ext = e.target.files[0].name.split('.').pop().toLowerCase();
+    if (ext === 'csv') parseFteCsv(e.target.files[0]);
+    else parseExcel(e.target.files[0]);
+  };
+  inp.click();
+});
+
+function parseFteCsv(file) {
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const lines = e.target.result.split(/\r?\n/);
+      if (lines.length < 2) { alert('CSV vacío'); return; }
+      // Parse header
+      const hdr = parseCsvLine(lines[0]);
+      const fteNameIdx = hdr.findIndex(h => /fte.?name/i.test(h));
+      const projIdIdx  = hdr.findIndex(h => /project.?id/i.test(h));
+      const projNmIdx  = hdr.findIndex(h => /project.?name/i.test(h));
+      const fteCtIdx   = hdr.findIndex(h => /fte.?count/i.test(h));
+      if (fteNameIdx < 0 || projIdIdx < 0 || fteCtIdx < 0) {
+        alert('Could not find columns: FTE Name, Project ID or FTE Count'); return;
+      }
+      // Rebuild FTE_DATA
+      const newFte = {};
+      for (let i = 1; i < lines.length; i++) {
+        if (!lines[i].trim()) continue;
+        const cols = parseCsvLine(lines[i]);
+        const eid  = (cols[fteNameIdx] || '').trim().toLowerCase();
+        if (!eid || eid === '---' || eid === 'staffing request') continue;
+        const prj  = (cols[projIdIdx]  || '').trim();
+        const nm   = (cols[projNmIdx]  || '').trim();
+        const ftv  = parseFloat((cols[fteCtIdx] || '0').replace(',', '.')) || 0;
+        if (!newFte[eid]) newFte[eid] = {};
+        if (!newFte[eid][prj]) newFte[eid][prj] = { name: nm, fte: 0 };
+        newFte[eid][prj].fte += ftv;
+      }
+      // Flatten to arrays
+      Object.keys(newFte).forEach(eid => {
+        FTE_DATA[eid] = Object.entries(newFte[eid]).map(([id, v]) => ({
+          id, name: v.name, fte: Math.round(v.fte * 100) / 100
+        }));
+      });
+      _loadedFte = file.name;
+      buildTree();
+      updateFileChips();
+      showBanner('✅ FTE Forecast updated from CSV');
+    } catch(err) { alert('Error al parsear CSV: ' + err.message); }
+  };
+  reader.readAsText(file, 'utf-8');
+}
+
+function parseCsvLine(line) {
+  const result = [];
+  let cur = '', inQ = false;
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+    if (ch === '"') { inQ = !inQ; }
+    else if (ch === ',' && !inQ) { result.push(cur); cur = ''; }
+    else { cur += ch; }
+  }
+  result.push(cur);
+  return result;
+}
+
+function parseExcel(file) {
+  if (typeof XLSX === 'undefined') {
+    alert('La libreria XLSX no esta disponible. Comprueba tu conexion a internet.');
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const wb = XLSX.read(e.target.result, { type: 'array' });
+
+      // Parse Ref tab → update ROLE_ABBREV (abbrev col A, role name col B)
+      const refSheet = wb.Sheets['Ref'];
+      if (refSheet) {
+        const refData = XLSX.utils.sheet_to_json(refSheet, { header: 1 });
+        refData.forEach(row => {
+          if (!row || row.length < 2) return;
+          const abbrev = String(row[0]||'').trim();
+          const role   = String(row[1]||'').trim();
+          if (abbrev && role && abbrev !== 'Reference') ROLE_ABBREV[role] = abbrev;
+        });
+      }
+
+      // Parse Roll-in sheet for EID -> {country, cl}
+      const rollIn = {};
+      const riSheet = wb.Sheets['Roll-in'];
+      if (riSheet) {
+        const riData = XLSX.utils.sheet_to_json(riSheet, { header: 1 });
+        let eidCol = 1, countryCol = 2, clCol = 3;
+        for (let r = 0; r < riData.length; r++) {
+          const row = riData[r];
+          if (row && row.some(c => String(c||'').trim() === 'EID')) {
+            eidCol = row.findIndex(c => String(c||'').trim() === 'EID');
+            countryCol = row.findIndex(c => String(c||'').trim() === 'Country');
+            clCol = row.findIndex(c => /career.?level/i.test(String(c||'').trim()));
+            if (clCol < 0) clCol = row.findIndex(c => String(c||'').trim() === 'Career Level');
+            break;
+          }
+        }
+        riData.slice(1).forEach(function(row) {
+          if (!row) return;
+          const eid = String(row[eidCol]||'').trim().toLowerCase();
+          if (eid && eid !== '#n/a' && eid !== '') {
+            rollIn[eid] = {
+              country: String(row[countryCol]||'N/A').trim().replace(/#N\/A/g,'N/A') || 'N/A',
+              cl: String(row[clCol]||'N/A').trim().replace(/#N\/A/g,'N/A') || 'N/A'
+            };
+          }
+        });
+      }
+
+      // Parse Team-Movements sheet
+      const tmSheet = wb.Sheets['Team-Movements'];
+      if (!tmSheet) {
+        alert('Could not find the "Team-Movements" sheet in the file.');
+        return;
+      }
+      const tmData = XLSX.utils.sheet_to_json(tmSheet, { header: 1 });
+      const hdr = tmData[0] || [];
+
+      let eidC = hdr.findIndex(c => String(c||'').trim() === 'EID');
+      let teamC = hdr.findIndex(c => String(c||'').trim() === 'Team');
+      let roleC = hdr.findIndex(c => String(c||'').trim() === 'Team Role');
+      let statusC = hdr.findIndex(c => String(c||'').trim() === 'Status');
+      if (eidC < 0) eidC = 0;
+      if (teamC < 0) teamC = 1;
+      if (roleC < 0) roleC = 2;
+      if (statusC < 0) statusC = 6;
+
+      const newMembers = [];
+      tmData.slice(1).forEach(function(row) {
+        if (!row) return;
+        const eid = String(row[eidC]||'').trim();
+        const team = String(row[teamC]||'').trim();
+        const role = String(row[roleC]||'').trim();
+        const status = String(row[statusC]||'').trim();
+        if (status === 'Active' && eid) {
+          const ri = rollIn[eid.toLowerCase()] || { country: 'N/A', cl: 'N/A' };
+          const nameParts = eid.split('.').map(function(p) {
+            if (!p) return '';
+            return (p.length <= 2) ? p.toUpperCase() + '.' : p.charAt(0).toUpperCase() + p.slice(1);
+          });
+          const displayName = nameParts.filter(Boolean).join(' ').trim();
+          newMembers.push({ eid, n: displayName || eid, team, role, country: ri.country, cl: ri.cl });
+        }
+      });
+
+      if (newMembers.length === 0) {
+        alert('No active members found in the file.');
+        return;
+      }
+
+      ALL_MEMBERS = newMembers;
+      _loadedRoster = file.name;
+      buildFilterUI();
+      buildTree();
+      updateActiveChips();
+      updateFileChips();
+
+      showBanner('✓ File processed: ' + newMembers.length + ' active members loaded');
+
+    } catch(err) {
+      alert('Error processing the file: ' + err.message);
+      console.error(err);
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+// ────────────────────────────────────────────────────────────
+// FILE TRACKING & REMOVAL
+// ────────────────────────────────────────────────────────────
+// Deep-copy the embedded FTE data so we can restore it later
+const ORIG_FTE_BACKUP = {};
+Object.entries(FTE_DATA).forEach(([k, v]) => { ORIG_FTE_BACKUP[k] = v.map(e => ({...e})); });
+
+let _loadedRoster = null;
+let _loadedFte    = null;
+
+function updateFileChips() {
+  const container = document.getElementById('loadedFiles');
+  container.innerHTML = '';
+  if (_loadedRoster) {
+    const chip = document.createElement('div');
+    chip.className = 'loaded-file-chip';
+    chip.innerHTML = `📊 ${_loadedRoster} <button class="chip-remove" title="Remove roster">✕</button>`;
+    chip.querySelector('.chip-remove').addEventListener('click', (e) => {
+      e.stopPropagation();
+      ALL_MEMBERS = [...ALL_MEMBERS_ORIG];
+      _loadedRoster = null;
+      buildFilterUI();
+      buildTree();
+      updateFileChips();
+      showBanner('Roster removed — reverted to embedded data');
+    });
+    container.appendChild(chip);
+  }
+  if (_loadedFte) {
+    const chip = document.createElement('div');
+    chip.className = 'loaded-file-chip';
+    chip.innerHTML = `📋 ${_loadedFte} <button class="chip-remove" title="Remove FTE data">✕</button>`;
+    chip.querySelector('.chip-remove').addEventListener('click', (e) => {
+      e.stopPropagation();
+      Object.keys(FTE_DATA).forEach(k => delete FTE_DATA[k]);
+      Object.entries(ORIG_FTE_BACKUP).forEach(([k, v]) => { FTE_DATA[k] = v.map(e => ({...e})); });
+      _loadedFte = null;
+      buildFilterUI();
+      buildTree();
+      updateFileChips();
+      showBanner('FTE data removed — reverted to embedded data');
+    });
+    container.appendChild(chip);
+  }
+}
+
+// ────────────────────────────────────────────────────────────
+// PPT EXPORT
+// ────────────────────────────────────────────────────────────
+function exportToPptx() {
+  if (typeof PptxGenJS === 'undefined') { alert('PptxGenJS not loaded — check internet.'); return; }
+  if (ALL_MEMBERS.length === 0) { alert('No data to export. Drop a roster file first.'); return; }
+  showBanner('⏳ Building PPTX…');
+
+  setTimeout(() => {
+    try {
+      const pool = filteredPool();
+      const pptx = new PptxGenJS();
+      pptx.layout = 'LAYOUT_WIDE'; // 13.33" × 7.5"
+      pptx.title  = 'PAM Org Chart';
+
+      const SW = 13.33, SH = 7.5;
+      const MX    = 0.35;  // horizontal margin
+      const GAP   = 0.12;  // gap between sibling cards
+      const V_GAP = 0.38;  // vertical gap between level rows
+      const HDR_H = 0.30;  // header strip height
+      const ROW_H = 0.165; // height per member line (one row, no wrap)
+      const PAD   = 0.04;  // top padding inside card body
+      const MIN_BODY = 0.20;
+      const FONT  = 'Calibri';
+
+      // ── Dynamic card height based on direct members ────────
+      function calcH(node) {
+        const d = nodeDirectMembers(node, pool).length;
+        return HDR_H + Math.max(MIN_BODY, PAD + d * ROW_H);
+      }
+      // Max height across a set of nodes (for equalization)
+      function levelH(nodes) {
+        const vis = nodes.filter(n => nodeTotal(n, pool) > 0);
+        return vis.length ? Math.max(...vis.map(calcH)) : HDR_H + MIN_BODY;
+      }
+
+      // ── Colour palette ─────────────────────────────────────
+      function pal(cls) {
+        const es=cls.includes('-es'), ps=cls.includes('-pssm'), wa=cls.includes('-warc');
+        const lv=cls.includes('l1')?1:cls.includes('l2')?2:3;
+        if (cls.includes('root')) return {h:'7b2d8b',ht:'FFFFFF',b:'f3e8f7',br:'7b2d8b'};
+        if (es) return lv===1?{h:'0041c2',ht:'FFFFFF',b:'FFFFFF',br:'0041c2'}
+                     :lv===2?{h:'0041c2',ht:'FFFFFF',b:'e6eeff',br:'0041c2'}
+                            :{h:'dce8fd',ht:'0041c2',b:'f0f5ff',br:'9bbff7'};
+        if (ps) return lv===1?{h:'1a7a3c',ht:'FFFFFF',b:'FFFFFF',br:'1a7a3c'}
+                     :lv===2?{h:'1a7a3c',ht:'FFFFFF',b:'e6f5ec',br:'1a7a3c'}
+                            :{h:'d9f2e3',ht:'1a7a3c',b:'f0faf4',br:'8fd4aa'};
+        if (wa) return lv===1?{h:'c0392b',ht:'FFFFFF',b:'FFFFFF',br:'c0392b'}
+                     :lv===2?{h:'c0392b',ht:'FFFFFF',b:'fdecea',br:'c0392b'}
+                            :{h:'fce4e3',ht:'c0392b',b:'fff5f5',br:'f4a9a4'};
+        return {h:'7b2d8b',ht:'FFFFFF',b:'f3e8f7',br:'7b2d8b'};
+      }
+      function teamCol(cls) {
+        return cls.includes('-es')?'0041c2':cls.includes('-pssm')?'1a7a3c':cls.includes('-warc')?'c0392b':'7b2d8b';
+      }
+
+      // ── Draw node card (ALL direct members, equalized h) ───
+      function drawCard(sl, node, x, y, w, h) {
+        if (nodeTotal(node, pool) === 0) return;
+        const cnt    = nodeTotal(node, pool);
+        const direct = nodeDirectMembers(node, pool);
+        const p      = pal(node.cls);
+        // Card body
+        sl.addShape('rect', {x,y,w,h, fill:{color:p.b}, line:{color:p.br,width:0.75}});
+        // Header strip
+        sl.addShape('rect', {x,y,w,h:HDR_H, fill:{color:p.h}, line:{color:p.h,width:0}});
+        // Node name (right portion reserved for count badge)
+        sl.addText(node.name, {
+          x:x+0.07,y:y+0.03,w:w-0.38,h:HDR_H-0.06,
+          fontSize:7.5,bold:true,color:p.ht,fontFace:FONT,valign:'middle',wrap:true
+        });
+        // Count badge – always horizontal (rotate:0, wrap:false prevents vertical/wrapped digits)
+        sl.addText(String(cnt), {
+          x:x+w-0.33,y:y+0.03,w:0.28,h:HDR_H-0.06,
+          fontSize:9,bold:true,color:p.ht,fontFace:FONT,
+          align:'center',valign:'middle',rotate:0,wrap:false
+        });
+        // ALL direct members – one fixed row each, same font size, no wrapping
+        direct.forEach((m, i) => {
+          let s = m.n;
+          if (SHOW.role) {
+            const roleText = SHOW.abbrev ? (ROLE_ABBREV[m.role] || m.role) : m.role;
+            if (roleText) s += '  ·  ' + roleText;
+          }
+          if (SHOW.location && m.country && m.country !== 'N/A') s += '  ' + (FLAGS[m.country] || m.country);
+          if (SHOW.cl && m.cl && m.cl !== 'N/A') s += '  ' + m.cl;
+          if (SHOW.fte) {
+            const ftes = FTE_DATA[m.eid] || [];
+            if (ftes.length) s += '  [' + ftes.map(f => {
+              let fs = f.id;
+              if (SHOW.fteName) fs += '–' + f.name;
+              return fs + ' ' + Math.round(f.fte * 100) + '%';
+            }).join(', ') + ']';
+          }
+          sl.addText(s, {
+            x:x+0.07, y:y+HDR_H+PAD+i*ROW_H, w:w-0.14, h:ROW_H,
+            fontSize:5.5, color:'333333', fontFace:FONT, valign:'middle', wrap:false
+          });
+        });
+      }
+
+      // ── Elbow connectors: parent bottom → children top ─────
+      function drawConns(sl, pX, pY, pH, pW, childData, childY, color) {
+        if (!childData.length) return;
+        const pMid = pX + pW/2;
+        const botY = pY + pH;
+        const midY = botY + (childY - botY) * 0.45;
+        sl.addShape('line',{x:pMid,y:botY,w:0.001,h:midY-botY,line:{color,width:0.5}});
+        if (childData.length > 1) {
+          const xs = childData.map(c=>c.x+c.w/2);
+          sl.addShape('line',{x:Math.min(...xs),y:midY,w:Math.max(...xs)-Math.min(...xs),h:0.001,line:{color,width:0.5}});
+        }
+        childData.forEach(c=>sl.addShape('line',{x:c.x+c.w/2,y:midY,w:0.001,h:childY-midY,line:{color,width:0.5}}));
+      }
+
+      // ── Horizontal row layout ──────────────────────────────
+      function rowLayout(nodes, aX, aW) {
+        const vis = nodes.filter(n => nodeTotal(n,pool)>0);
+        if (!vis.length) return [];
+        const cw = Math.min(2.7, (aW - GAP*(vis.length-1)) / vis.length);
+        const tw = vis.length*cw + (vis.length-1)*GAP;
+        const sx = aX + (aW-tw)/2;
+        return vis.map((n,i)=>({node:n, x:sx+i*(cw+GAP), w:cw}));
+      }
+
+      // ── Slide chrome ───────────────────────────────────────
+      function addTitle(sl, text) {
+        sl.addShape('rect',{x:0,y:0,w:SW,h:0.50,fill:{color:'1a0533'},line:{color:'1a0533',width:0}});
+        sl.addText(text,{x:MX,y:0.04,w:SW-2*MX,h:0.42,fontSize:13,bold:true,color:'FFFFFF',fontFace:FONT,valign:'middle'});
+      }
+      const today = new Date().toLocaleDateString('en-US',{year:'numeric',month:'short',day:'numeric'});
+      const shownN = new Set(pool.map(m=>m.eid)).size;
+      const totalN = new Set(ALL_MEMBERS.map(m=>m.eid)).size;
+      const footTxt = `PAM Org Chart  ·  ${today}  ·  ${shownN} of ${totalN} people`;
+      function addFooter(sl) {
+        sl.addText(footTxt,{x:MX,y:SH-0.22,w:SW-2*MX,h:0.20,fontSize:6.5,color:'999999',fontFace:FONT,align:'right'});
+      }
+
+      // ══════════════════════════════════════════════════════
+      // SLIDE 1: L0 (root) + L1 + L2  — equal heights per level
+      // ══════════════════════════════════════════════════════
+      {
+        const sl = pptx.addSlide();
+        sl.background = {color:'FAFAFA'};
+        addTitle(sl, 'PAM Org Chart — Overview');
+
+        const l1s   = (ORG.children||[]).filter(n=>nodeTotal(n,pool)>0);
+        const allL2 = l1s.flatMap(l1=>(l1.children||[]).filter(n=>nodeTotal(n,pool)>0));
+
+        // Equalized heights per level
+        const h0 = calcH(ORG);
+        const h1 = levelH(l1s);
+        const h2 = levelH(allL2);
+
+        const TITLE_H = 0.50;
+        const y0 = TITLE_H + 0.15;
+        const y1 = y0 + h0 + V_GAP;
+        const y2 = y1 + h1 + V_GAP;
+
+        // L0 – root card centered
+        const w0 = Math.min(3.2, SW-2*MX);
+        const x0 = (SW-w0)/2;
+        drawCard(sl, ORG, x0, y0, w0, h0);
+
+        // L1 – one column per L1 node
+        const colW = (SW-2*MX) / Math.max(l1s.length, 1);
+        const w1   = Math.min(2.7, colW-0.4);
+        const l1Layout = l1s.map((l1,i)=>({node:l1, x:MX+i*colW+(colW-w1)/2, w:w1}));
+
+        // L0 → L1 connectors
+        drawConns(sl, x0, y0, h0, w0, l1Layout, y1, '7b2d8b');
+        l1Layout.forEach(({node,x,w})=>drawCard(sl,node,x,y1,w,h1));
+
+        // L2 – rows inside each L1 column
+        l1s.forEach((l1,i)=>{
+          const cX  = MX + i*colW;
+          const l1X = MX + i*colW + (colW-w1)/2;
+          const l2r = rowLayout(l1.children||[], cX, colW);
+          if (l2r.length) {
+            drawConns(sl, l1X, y1, h1, w1, l2r, y2, teamCol(l1.cls));
+            l2r.forEach(({node,x,w})=>drawCard(sl,node,x,y2,w,h2));
+          }
+        });
+        addFooter(sl);
+      }
+
+      // ══════════════════════════════════════════════════════
+      // SLIDES: L2 parent + L3 children (equal heights for children)
+      // ══════════════════════════════════════════════════════
+      function makeSlide(parentNode, titleTxt, children) {
+        if (!children.length) return;
+        const sl = pptx.addSlide();
+        sl.background = {color:'FAFAFA'};
+        addTitle(sl, titleTxt);
+
+        const pH = calcH(parentNode);
+        const pW = Math.min(3.2, SW-2*MX);
+        const pX = (SW-pW)/2;
+        const pY = 0.50 + 0.15;
+        drawCard(sl, parentNode, pX, pY, pW, pH);
+
+        const chH   = levelH(children);
+        const chY   = pY + pH + V_GAP;
+        const chRow = rowLayout(children, MX, SW-2*MX);
+        drawConns(sl, pX, pY, pH, pW, chRow, chY, teamCol(parentNode.cls));
+        chRow.forEach(({node,x,w})=>drawCard(sl,node,x,chY,w,chH));
+        addFooter(sl);
+      }
+
+      // L2 + L3 slides
+      (ORG.children||[]).forEach(l1=>{
+        (l1.children||[]).filter(l2=>nodeTotal(l2,pool)>0).forEach(l2=>{
+          makeSlide(l2, `${l1.name}  ›  ${l2.name}`, (l2.children||[]).filter(c=>nodeTotal(c,pool)>0));
+        });
+      });
+
+      // L3 + L4 slides
+      (ORG.children||[]).forEach(l1=>{
+        (l1.children||[]).forEach(l2=>{
+          (l2.children||[]).filter(l3=>nodeTotal(l3,pool)>0).forEach(l3=>{
+            makeSlide(l3, `${l2.name}  ›  ${l3.name}`, (l3.children||[]).filter(c=>nodeTotal(c,pool)>0));
+          });
+        });
+      });
+
+      pptx.writeFile({fileName:'PAM_Org_Chart.pptx'});
+      showBanner('✅ PPT downloaded!');
+    } catch(err) {
+      showBanner('❌ PPT export failed: ' + err.message);
+      console.error(err);
+    }
+  }, 60);
+}
+
+function clearDroppedFiles() {
+  ALL_MEMBERS = [];
+  Object.keys(FTE_DATA).forEach(k => delete FTE_DATA[k]);
+  _loadedRoster = null;
+  _loadedFte = null;
+  document.getElementById('tree').innerHTML = '';
+  updateStats([]);
+  buildFilterUI();
+  updateFileChips();
+  showBanner('✅ Files cleared — drop new files to reload the chart');
+}
+
+function refreshChart() {
+  buildFilterUI();
+  buildTree();
+  updateFileChips();
+  showBanner('✅ Chart refreshed');
+}
+
+// ────────────────────────────────────────────────────────────
+// INIT
+// ────────────────────────────────────────────────────────────
+buildFilterUI();
+buildTree();
+</script>
+
+
+</body></html>
